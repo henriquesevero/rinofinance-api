@@ -71,7 +71,7 @@ func main() {
 	tokens := pkgauth.NewTokenIssuer(cfg.JWTSecret, cfg.JWTTTL)
 
 	// Use cases (application layer).
-	registerUser := appauth.NewRegisterUserUseCase(userRepo, hasher)
+	registerUser := appauth.NewRegisterUserUseCase(userRepo, hasher, cfg.RegistrationCode)
 	loginUser := appauth.NewLoginUserUseCase(userRepo, hasher, tokens)
 
 	updateProfile := appprofile.NewUpdateProfileUseCase(userRepo)

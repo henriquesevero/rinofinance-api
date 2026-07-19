@@ -27,7 +27,7 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	u, err := h.register.Execute(r.Context(), req.Name, req.Email, req.Password)
+	u, err := h.register.Execute(r.Context(), req.Name, req.Email, req.Password, req.Code)
 	if err != nil {
 		writeError(w, err)
 		return

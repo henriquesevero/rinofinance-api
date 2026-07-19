@@ -64,7 +64,8 @@ func statusForError(err error) int {
 	case errors.Is(err, domainuser.ErrInvalidCredentials):
 		return http.StatusUnauthorized
 
-	case errors.Is(err, shared.ErrUnauthorized):
+	case errors.Is(err, shared.ErrUnauthorized),
+		errors.Is(err, appauth.ErrInvalidRegistrationCode):
 		return http.StatusForbidden
 
 	case errors.Is(err, shared.ErrEmptyName),

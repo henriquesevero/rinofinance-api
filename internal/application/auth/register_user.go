@@ -12,18 +12,25 @@ import (
 
 // RegisterUserUseCase creates a new account with a hashed password.
 type RegisterUserUseCase struct {
-	users  domainuser.Repository
-	hasher PasswordHasher
+	users            domainuser.Repository
+	hasher           PasswordHasher
+	registrationCode string
 }
 
 // NewRegisterUserUseCase wires the dependencies for RegisterUserUseCase.
-func NewRegisterUserUseCase(users domainuser.Repository, hasher PasswordHasher) *RegisterUserUseCase {
-	return &RegisterUserUseCase{users: users, hasher: hasher}
+// registrationCode, when non-empty, is an invite code required to sign up.
+func NewRegisterUserUseCase(users domainuser.Repository, hasher PasswordHasher, registrationCode string) *RegisterUserUseCase {
+	return &RegisterUserUseCase{users: users, hasher: hasher, registrationCode: registrationCode}
 }
 
-// Execute validates the password strength, ensures the email isn't already
-// registered, hashes the password and persists the new user.
-func (uc *RegisterUserUseCase) Execute(ctx context.Context, name, email, plaintextPassword string) (*domainuser.User, error) {
+// Execute validates the invite code and password strength, ensures the
+// email isn't already registered, hashes the password and persists the new
+// user.
+func (uc *RegisterUserUseCase) Execute(ctx context.Context, name, email, plaintextPassword, code string) (*domainuser.User, error) {
+	if uc.registrationCode != "" && strings.TrimSpace(code) != uc.registrationCode {
+		return nil, ErrInvalidRegistrationCode
+	}
+
 	if len(plaintextPassword) < 8 {
 		return nil, ErrPasswordTooShort
 	}

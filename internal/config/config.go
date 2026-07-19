@@ -33,6 +33,10 @@ type Config struct {
 	// AllowedOrigins is the list of origins allowed by CORS (the Vercel
 	// frontend URL(s) in production).
 	AllowedOrigins []string
+
+	// RegistrationCode, when non-empty, is an invite code that new users
+	// must supply to sign up. Empty leaves registration open.
+	RegistrationCode string
 }
 
 // Load reads and validates configuration from environment variables,
@@ -73,13 +77,20 @@ func Load() (*Config, error) {
 		origins = splitAndTrim(raw)
 	}
 
+	// Defaults to the current invite code; override via env to rotate it.
+	registrationCode := os.Getenv("REGISTRATION_CODE")
+	if registrationCode == "" {
+		registrationCode = "171598"
+	}
+
 	return &Config{
-		Port:           port,
-		MongoURI:       mongoURI,
-		MongoDatabase:  mongoDatabase,
-		JWTSecret:      jwtSecret,
-		JWTTTL:         ttl,
-		AllowedOrigins: origins,
+		Port:             port,
+		MongoURI:         mongoURI,
+		MongoDatabase:    mongoDatabase,
+		JWTSecret:        jwtSecret,
+		JWTTTL:           ttl,
+		AllowedOrigins:   origins,
+		RegistrationCode: registrationCode,
 	}, nil
 }
 
