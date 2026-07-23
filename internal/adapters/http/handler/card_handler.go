@@ -374,21 +374,33 @@ func (h *CardHandler) ImportFatura(w http.ResponseWriter, r *http.Request) {
 			writeError(w, errBadRequest)
 			return
 		}
+		categoryID, err := parseOptionalUUID(item.CategoryID)
+		if err != nil {
+			writeError(w, errBadRequest)
+			return
+		}
 		installments = append(installments, appcard.ImportInstallmentInput{
 			Name:                 item.Name,
 			InstallmentAmount:    item.InstallmentAmount,
 			TotalInstallments:    item.TotalInstallments,
 			FirstInstallmentDate: date,
 			Domain:               item.Domain,
+			CategoryID:           categoryID,
 		})
 	}
 
 	subscriptions := make([]appcard.ImportSubscriptionInput, 0, len(req.Subscriptions))
 	for _, item := range req.Subscriptions {
+		categoryID, err := parseOptionalUUID(item.CategoryID)
+		if err != nil {
+			writeError(w, errBadRequest)
+			return
+		}
 		subscriptions = append(subscriptions, appcard.ImportSubscriptionInput{
 			Name:          item.Name,
 			MonthlyAmount: item.MonthlyAmount,
 			Domain:        item.Domain,
+			CategoryID:    categoryID,
 		})
 	}
 

@@ -80,6 +80,7 @@ type ImportInstallmentItem struct {
 	TotalInstallments    int          `json:"totalInstallments"`
 	FirstInstallmentDate string       `json:"firstInstallmentDate"`
 	Domain               string       `json:"domain"`
+	CategoryID           string       `json:"categoryId"`
 }
 
 // ImportSubscriptionItem is one subscription parsed from a statement.
@@ -87,6 +88,7 @@ type ImportSubscriptionItem struct {
 	Name          string       `json:"name"`
 	MonthlyAmount shared.Money `json:"monthlyAmount"`
 	Domain        string       `json:"domain"`
+	CategoryID    string       `json:"categoryId"`
 }
 
 // ImportFaturaResponse reports how many items were created.

@@ -20,6 +20,7 @@ type ImportInstallmentInput struct {
 	TotalInstallments    int
 	FirstInstallmentDate time.Time
 	Domain               string
+	CategoryID           *uuid.UUID
 }
 
 // ImportSubscriptionInput describes one subscription to import.
@@ -27,6 +28,7 @@ type ImportSubscriptionInput struct {
 	Name          string
 	MonthlyAmount shared.Money
 	Domain        string
+	CategoryID    *uuid.UUID
 }
 
 // ImportResult reports how many items were created.
@@ -76,6 +78,7 @@ func (uc *ImportCardItemsUseCase) Execute(
 			return ImportResult{}, fmt.Errorf("compra parcelada inválida (%q): %w", in.Name, err)
 		}
 		p.SetDomain(in.Domain)
+		p.SetCategory(in.CategoryID)
 		builtPurchases = append(builtPurchases, p)
 	}
 
@@ -86,6 +89,7 @@ func (uc *ImportCardItemsUseCase) Execute(
 			return ImportResult{}, fmt.Errorf("assinatura inválida (%q): %w", in.Name, err)
 		}
 		s.SetDomain(in.Domain)
+		s.SetCategory(in.CategoryID)
 		builtSubscriptions = append(builtSubscriptions, s)
 	}
 
