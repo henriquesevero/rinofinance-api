@@ -190,8 +190,13 @@ func (h *IncomeHandler) ToggleReceived(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
+	reference, err := parseReferenceMonth(r)
+	if err != nil {
+		writeError(w, err)
+		return
+	}
 
-	inc, err := h.toggleReceived.Execute(r.Context(), userID, incomeID)
+	inc, err := h.toggleReceived.Execute(r.Context(), userID, incomeID, reference.Format("2006-01"))
 	if err != nil {
 		writeError(w, err)
 		return

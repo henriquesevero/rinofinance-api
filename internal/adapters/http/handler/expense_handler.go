@@ -226,7 +226,13 @@ func (h *ExpenseHandler) TogglePaid(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	e, err := h.togglePaid.Execute(r.Context(), userID, expenseID)
+	reference, err := parseReferenceMonth(r)
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+
+	e, err := h.togglePaid.Execute(r.Context(), userID, expenseID, reference.Format("2006-01"))
 	if err != nil {
 		writeError(w, err)
 		return

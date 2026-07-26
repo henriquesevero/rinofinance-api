@@ -14,6 +14,7 @@ import (
 	appincome "rinofinance-api/internal/application/income"
 	domainexpense "rinofinance-api/internal/domain/expense"
 	domainincome "rinofinance-api/internal/domain/income"
+	"rinofinance-api/internal/domain/monthlystatus"
 	"rinofinance-api/internal/domain/shared"
 )
 
@@ -37,6 +38,7 @@ type GetMonthlySummaryUseCase struct {
 	resolver        *appexpense.CardAmountResolver
 	accountResolver *appexpense.AccountLinkResolver
 	incomeResolver  *appincome.AccountBalanceResolver
+	status          monthlystatus.Repository
 }
 
 // NewGetMonthlySummaryUseCase wires the dependencies for
@@ -47,6 +49,7 @@ func NewGetMonthlySummaryUseCase(
 	resolver *appexpense.CardAmountResolver,
 	accountResolver *appexpense.AccountLinkResolver,
 	incomeResolver *appincome.AccountBalanceResolver,
+	status monthlystatus.Repository,
 ) *GetMonthlySummaryUseCase {
 	return &GetMonthlySummaryUseCase{
 		incomes:         incomes,
@@ -54,6 +57,7 @@ func NewGetMonthlySummaryUseCase(
 		resolver:        resolver,
 		accountResolver: accountResolver,
 		incomeResolver:  incomeResolver,
+		status:          status,
 	}
 }
 
@@ -79,6 +83,24 @@ func (uc *GetMonthlySummaryUseCase) Execute(ctx context.Context, userID uuid.UUI
 	}
 	if err := uc.accountResolver.ResolveAll(ctx, expenses, reference); err != nil {
 		return nil, err
+	}
+
+	// Overlay the per-month received/paid status so the checkmarks reflect the
+	// month being viewed (they reset each month) instead of a global flag.
+	monthKey := reference.Format("2006-01")
+	incStatus, err := uc.status.ByMonth(ctx, userID, monthlystatus.Income, monthKey)
+	if err != nil {
+		return nil, err
+	}
+	for _, i := range incomes {
+		i.SetReceived(incStatus[i.ID])
+	}
+	expStatus, err := uc.status.ByMonth(ctx, userID, monthlystatus.Expense, monthKey)
+	if err != nil {
+		return nil, err
+	}
+	for _, e := range expenses {
+		e.SetPaid(expStatus[e.ID])
 	}
 
 	totalIncome := shared.Zero

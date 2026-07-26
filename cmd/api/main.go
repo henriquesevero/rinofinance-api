@@ -65,6 +65,7 @@ func main() {
 	categoryRepo := mongodb.NewCategoryRepository(db)
 	accountRepo := mongodb.NewAccountRepository(db)
 	accountPurchaseRepo := mongodb.NewAccountPurchaseRepository(db)
+	monthlyStatusRepo := mongodb.NewMonthlyStatusRepository(db)
 
 	// Technical adapters used by the auth use cases.
 	hasher := pkgauth.BcryptHasher{}
@@ -86,7 +87,7 @@ func main() {
 	createAccountLinkedIncome := appincome.NewCreateAccountLinkedIncomeUseCase(incomeRepo, accountRepo)
 	updateIncome := appincome.NewUpdateIncomeUseCase(incomeRepo)
 	toggleIncome := appincome.NewToggleIncomeUseCase(incomeRepo)
-	toggleIncomeReceived := appincome.NewToggleReceivedUseCase(incomeRepo)
+	toggleIncomeReceived := appincome.NewToggleReceivedUseCase(incomeRepo, monthlyStatusRepo)
 	deleteIncome := appincome.NewDeleteIncomeUseCase(incomeRepo)
 	listIncomes := appincome.NewListIncomesUseCase(incomeRepo, accountBalanceResolver)
 	reorderIncomes := appincome.NewReorderIncomesUseCase(incomeRepo)
@@ -98,7 +99,7 @@ func main() {
 	createAccountLinkedExpense := appexpense.NewCreateAccountLinkedExpenseUseCase(expenseRepo, accountRepo)
 	updateExpense := appexpense.NewUpdateExpenseUseCase(expenseRepo)
 	toggleExpense := appexpense.NewToggleExpenseUseCase(expenseRepo)
-	togglePaidExpense := appexpense.NewTogglePaidUseCase(expenseRepo)
+	togglePaidExpense := appexpense.NewTogglePaidUseCase(expenseRepo, monthlyStatusRepo)
 	deleteExpense := appexpense.NewDeleteExpenseUseCase(expenseRepo)
 	listExpenses := appexpense.NewListExpensesUseCase(expenseRepo, cardAmountResolver, accountLinkResolver)
 	reorderExpenses := appexpense.NewReorderExpensesUseCase(expenseRepo)
@@ -141,7 +142,7 @@ func main() {
 	deleteAsset := appinvestment.NewDeleteAssetUseCase(investmentRepo)
 	listAssets := appinvestment.NewListAssetsUseCase(investmentRepo)
 
-	getMonthlySummary := appdashboard.NewGetMonthlySummaryUseCase(incomeRepo, expenseRepo, cardAmountResolver, accountLinkResolver, accountBalanceResolver)
+	getMonthlySummary := appdashboard.NewGetMonthlySummaryUseCase(incomeRepo, expenseRepo, cardAmountResolver, accountLinkResolver, accountBalanceResolver, monthlyStatusRepo)
 
 	// Handlers (primary/driving adapter).
 	handlers := rest.Handlers{

@@ -7,22 +7,26 @@ import (
 	"github.com/google/uuid"
 
 	domainexpense "rinofinance-api/internal/domain/expense"
+	"rinofinance-api/internal/domain/monthlystatus"
 	"rinofinance-api/internal/domain/shared"
 )
 
-// TogglePaidUseCase flips an expense's Paid flag, marking whether the
-// expense has actually been paid this month.
+// TogglePaidUseCase flips whether an expense was paid in a given month. The
+// flag is stored per month (not on the expense itself), so it resets every
+// month and reflects the month being viewed.
 type TogglePaidUseCase struct {
-	repo domainexpense.Repository
+	repo   domainexpense.Repository
+	status monthlystatus.Repository
 }
 
 // NewTogglePaidUseCase wires the dependencies for TogglePaidUseCase.
-func NewTogglePaidUseCase(repo domainexpense.Repository) *TogglePaidUseCase {
-	return &TogglePaidUseCase{repo: repo}
+func NewTogglePaidUseCase(repo domainexpense.Repository, status monthlystatus.Repository) *TogglePaidUseCase {
+	return &TogglePaidUseCase{repo: repo, status: status}
 }
 
-// Execute loads the expense, verifies ownership, and flips Paid.
-func (uc *TogglePaidUseCase) Execute(ctx context.Context, userID, expenseID uuid.UUID) (*domainexpense.Expense, error) {
+// Execute verifies ownership, flips the month's paid status, and returns the
+// expense carrying that month's value.
+func (uc *TogglePaidUseCase) Execute(ctx context.Context, userID, expenseID uuid.UUID, month string) (*domainexpense.Expense, error) {
 	e, err := uc.repo.FindByID(ctx, expenseID)
 	if err != nil {
 		return nil, fmt.Errorf("erro ao buscar saída: %w", err)
@@ -31,10 +35,14 @@ func (uc *TogglePaidUseCase) Execute(ctx context.Context, userID, expenseID uuid
 		return nil, shared.ErrNotFound
 	}
 
-	e.SetPaid(!e.Paid)
-
-	if err := uc.repo.Update(ctx, e); err != nil {
-		return nil, fmt.Errorf("erro ao atualizar saída: %w", err)
+	current, err := uc.status.Get(ctx, userID, monthlystatus.Expense, expenseID, month)
+	if err != nil {
+		return nil, err
 	}
+	if err := uc.status.Set(ctx, userID, monthlystatus.Expense, expenseID, month, !current); err != nil {
+		return nil, err
+	}
+
+	e.SetPaid(!current) // reflect the month's status on the returned entity
 	return e, nil
 }
