@@ -41,6 +41,11 @@ type CreditCard struct {
 	// DueDay is the invoice due day of month (1–31). Zero means unset,
 	// hiding the "vence em X dias" countdown in the UI.
 	DueDay int
+	// ClosingDay is the invoice closing day of month (1–31) — when the
+	// current bill closes and a new one starts accumulating. Zero means
+	// unset. Combined with DueDay it drives the "melhor dia de compra"
+	// (best purchase day = the day after the bill closes).
+	ClosingDay int
 	// Position is the card's manual sort order in the overview grid (lower
 	// comes first). New cards are appended to the end; the user can drag to
 	// reorder.
@@ -113,6 +118,16 @@ func (c *CreditCard) SetDueDay(day int) {
 		day = 0
 	}
 	c.DueDay = day
+	c.UpdatedAt = time.Now().UTC()
+}
+
+// SetClosingDay sets the invoice closing day of month (1–31). Any value
+// outside that range is treated as unset (0).
+func (c *CreditCard) SetClosingDay(day int) {
+	if day < 1 || day > 31 {
+		day = 0
+	}
+	c.ClosingDay = day
 	c.UpdatedAt = time.Now().UTC()
 }
 

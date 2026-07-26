@@ -40,6 +40,7 @@ func (uc *UpdateCardUseCase) Execute(ctx context.Context, userID, cardID uuid.UU
 	c.SetImage(details.ImageURL)
 	c.SetCreditLimit(details.CreditLimit)
 	c.SetDueDay(details.DueDay)
+	c.SetClosingDay(details.ClosingDay)
 
 	if err := uc.repo.Update(ctx, c); err != nil {
 		return nil, fmt.Errorf("erro ao atualizar cartão: %w", err)

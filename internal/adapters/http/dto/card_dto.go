@@ -22,6 +22,7 @@ type CardRequest struct {
 	ImageURL    string       `json:"imageUrl"`
 	CreditLimit shared.Money `json:"creditLimit"`
 	DueDay      int          `json:"dueDay"`
+	ClosingDay  int          `json:"closingDay"`
 }
 
 // Details maps the request's optional visual/financial fields onto the
@@ -33,6 +34,7 @@ func (r CardRequest) Details() appcard.CardDetails {
 		ImageURL:    r.ImageURL,
 		CreditLimit: r.CreditLimit,
 		DueDay:      r.DueDay,
+		ClosingDay:  r.ClosingDay,
 	}
 }
 

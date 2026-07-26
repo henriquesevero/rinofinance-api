@@ -19,6 +19,7 @@ type CardDetails struct {
 	ImageURL    string
 	CreditLimit shared.Money
 	DueDay      int
+	ClosingDay  int
 }
 
 // CreateCardUseCase creates a new credit card for a user.
@@ -43,6 +44,7 @@ func (uc *CreateCardUseCase) Execute(ctx context.Context, userID uuid.UUID, name
 	c.SetImage(details.ImageURL)
 	c.SetCreditLimit(details.CreditLimit)
 	c.SetDueDay(details.DueDay)
+	c.SetClosingDay(details.ClosingDay)
 
 	// Append new cards to the end of the user's manual ordering.
 	existing, err := uc.repo.ListByUser(ctx, userID)
