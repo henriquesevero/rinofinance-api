@@ -26,15 +26,17 @@ func NewAccountRepository(db *mongo.Database) *AccountRepository {
 }
 
 type accountDoc struct {
-	ID        string          `bson:"_id"`
-	UserID    string          `bson:"user_id"`
-	Name      string          `bson:"name"`
-	Color     string          `bson:"color,omitempty"`
-	ImageURL  string          `bson:"image_url,omitempty"`
-	Balance   bson.Decimal128 `bson:"balance"`
-	Position  int             `bson:"position"`
-	CreatedAt time.Time       `bson:"created_at"`
-	UpdatedAt time.Time       `bson:"updated_at"`
+	ID              string          `bson:"_id"`
+	UserID          string          `bson:"user_id"`
+	Name            string          `bson:"name"`
+	Color           string          `bson:"color,omitempty"`
+	ImageURL        string          `bson:"image_url,omitempty"`
+	Balance         bson.Decimal128 `bson:"balance"`
+	Position        int             `bson:"position"`
+	PluggyItemID    string          `bson:"pluggy_item_id,omitempty"`
+	PluggyAccountID string          `bson:"pluggy_account_id,omitempty"`
+	CreatedAt       time.Time       `bson:"created_at"`
+	UpdatedAt       time.Time       `bson:"updated_at"`
 }
 
 func newAccountDoc(a *domainaccount.Account) (accountDoc, error) {
@@ -43,15 +45,17 @@ func newAccountDoc(a *domainaccount.Account) (accountDoc, error) {
 		return accountDoc{}, err
 	}
 	return accountDoc{
-		ID:        a.ID.String(),
-		UserID:    a.UserID.String(),
-		Name:      a.Name,
-		Color:     a.Color,
-		ImageURL:  a.ImageURL,
-		Balance:   balance,
-		Position:  a.Position,
-		CreatedAt: a.CreatedAt,
-		UpdatedAt: a.UpdatedAt,
+		ID:              a.ID.String(),
+		UserID:          a.UserID.String(),
+		Name:            a.Name,
+		Color:           a.Color,
+		ImageURL:        a.ImageURL,
+		Balance:         balance,
+		Position:        a.Position,
+		PluggyItemID:    a.PluggyItemID,
+		PluggyAccountID: a.PluggyAccountID,
+		CreatedAt:       a.CreatedAt,
+		UpdatedAt:       a.UpdatedAt,
 	}, nil
 }
 
@@ -69,15 +73,17 @@ func (d accountDoc) toDomain() (*domainaccount.Account, error) {
 		return nil, err
 	}
 	return &domainaccount.Account{
-		ID:        id,
-		UserID:    userID,
-		Name:      d.Name,
-		Color:     d.Color,
-		ImageURL:  d.ImageURL,
-		Balance:   balance,
-		Position:  d.Position,
-		CreatedAt: d.CreatedAt,
-		UpdatedAt: d.UpdatedAt,
+		ID:              id,
+		UserID:          userID,
+		Name:            d.Name,
+		Color:           d.Color,
+		ImageURL:        d.ImageURL,
+		Balance:         balance,
+		Position:        d.Position,
+		PluggyItemID:    d.PluggyItemID,
+		PluggyAccountID: d.PluggyAccountID,
+		CreatedAt:       d.CreatedAt,
+		UpdatedAt:       d.UpdatedAt,
 	}, nil
 }
 

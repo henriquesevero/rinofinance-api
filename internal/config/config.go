@@ -37,6 +37,12 @@ type Config struct {
 	// RegistrationCode, when non-empty, is an invite code that new users
 	// must supply to sign up. Empty leaves registration open.
 	RegistrationCode string
+
+	// PluggyClientID / PluggyClientSecret are the Pluggy Open Finance API
+	// credentials. Empty disables the Pluggy sync integration (the endpoint
+	// responds that it isn't configured).
+	PluggyClientID     string
+	PluggyClientSecret string
 }
 
 // Load reads and validates configuration from environment variables,
@@ -84,13 +90,15 @@ func Load() (*Config, error) {
 	}
 
 	return &Config{
-		Port:             port,
-		MongoURI:         mongoURI,
-		MongoDatabase:    mongoDatabase,
-		JWTSecret:        jwtSecret,
-		JWTTTL:           ttl,
-		AllowedOrigins:   origins,
-		RegistrationCode: registrationCode,
+		Port:               port,
+		MongoURI:           mongoURI,
+		MongoDatabase:      mongoDatabase,
+		JWTSecret:          jwtSecret,
+		JWTTTL:             ttl,
+		AllowedOrigins:     origins,
+		RegistrationCode:   registrationCode,
+		PluggyClientID:     os.Getenv("PLUGGY_CLIENT_ID"),
+		PluggyClientSecret: os.Getenv("PLUGGY_CLIENT_SECRET"),
 	}, nil
 }
 

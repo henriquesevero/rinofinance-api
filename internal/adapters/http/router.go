@@ -23,6 +23,7 @@ type Handlers struct {
 	Category   *handler.CategoryHandler
 	Wallet     *handler.WalletHandler
 	Dashboard  *handler.DashboardHandler
+	Pluggy     *handler.PluggyHandler
 }
 
 // NewRouter builds the full HTTP routing table, applying CORS to every
@@ -105,6 +106,8 @@ func NewRouter(h Handlers, tokens *auth.TokenIssuer, allowedOrigins []string) ht
 	protected.HandleFunc("POST /api/accounts/{accountId}/purchases", h.Wallet.CreatePurchase)
 	protected.HandleFunc("PUT /api/account-purchases/{id}", h.Wallet.UpdatePurchase)
 	protected.HandleFunc("DELETE /api/account-purchases/{id}", h.Wallet.DeletePurchase)
+
+	protected.HandleFunc("POST /api/pluggy/sync", h.Pluggy.Sync)
 
 	mux.Handle("/api/", middleware.Auth(tokens)(protected))
 

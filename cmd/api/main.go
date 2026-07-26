@@ -16,6 +16,7 @@ import (
 	rest "rinofinance-api/internal/adapters/http"
 	"rinofinance-api/internal/adapters/http/handler"
 	"rinofinance-api/internal/adapters/mongodb"
+	"rinofinance-api/internal/adapters/pluggy"
 	appaccount "rinofinance-api/internal/application/account"
 	appauth "rinofinance-api/internal/application/auth"
 	appcard "rinofinance-api/internal/application/card"
@@ -24,6 +25,7 @@ import (
 	appexpense "rinofinance-api/internal/application/expense"
 	appincome "rinofinance-api/internal/application/income"
 	appinvestment "rinofinance-api/internal/application/investment"
+	apppluggy "rinofinance-api/internal/application/pluggy"
 	appprofile "rinofinance-api/internal/application/profile"
 	"rinofinance-api/internal/config"
 	pkgauth "rinofinance-api/internal/pkg/auth"
@@ -143,6 +145,11 @@ func main() {
 
 	getMonthlySummary := appdashboard.NewGetMonthlySummaryUseCase(incomeRepo, expenseRepo, cardAmountResolver, accountLinkResolver, accountBalanceResolver)
 
+	// Pluggy Open Finance integration: an outbound client plus the sync use
+	// case that mirrors a connection's checking accounts and transactions.
+	pluggyClient := pluggy.NewClient(cfg.PluggyClientID, cfg.PluggyClientSecret)
+	syncPluggyItem := apppluggy.NewSyncItemUseCase(pluggyClient, accountRepo, accountPurchaseRepo, categoryRepo)
+
 	// Handlers (primary/driving adapter).
 	handlers := rest.Handlers{
 		Auth:    handler.NewAuthHandler(registerUser, loginUser),
@@ -168,6 +175,7 @@ func main() {
 			createAccountPurchase, updateAccountPurchase, deleteAccountPurchase,
 		),
 		Dashboard: handler.NewDashboardHandler(getMonthlySummary),
+		Pluggy:    handler.NewPluggyHandler(syncPluggyItem),
 	}
 
 	router := rest.NewRouter(handlers, tokens, cfg.AllowedOrigins)

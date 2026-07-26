@@ -28,9 +28,23 @@ type Account struct {
 	// at any time via SetBalance.
 	Balance shared.Money
 	// Position is the manual sort order in the accounts list (lower first).
-	Position  int
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	Position int
+	// PluggyItemID / PluggyAccountID link this account to its source
+	// connection and account in Pluggy (Open Finance); empty when the
+	// account isn't synced from Pluggy. Used to update it in place on
+	// re-sync instead of creating duplicates.
+	PluggyItemID    string
+	PluggyAccountID string
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
+}
+
+// LinkPluggy records the Pluggy connection/account this account mirrors, so
+// later syncs update the same account rather than creating a new one.
+func (a *Account) LinkPluggy(itemID, accountID string) {
+	a.PluggyItemID = strings.TrimSpace(itemID)
+	a.PluggyAccountID = strings.TrimSpace(accountID)
+	a.UpdatedAt = time.Now().UTC()
 }
 
 // SetPosition sets the manual sort order of the account in the list.
@@ -104,9 +118,20 @@ func (a *Account) Credit(amount shared.Money) {
 	a.UpdatedAt = time.Now().UTC()
 }
 
-// Purchase is a one-off debit purchase paid from an account (a "compra
-// avulsa" no débito). Its amount reduces the account's available balance
-// and feeds the month's account-linked "Compras Débito" expense.
+// Direction distinguishes money leaving the account (a debit / "saída") from
+// money coming in (a credit / "entrada"). Manual purchases are always
+// debits; the empty value is treated as a debit for backward compatibility.
+type Direction = string
+
+const (
+	DirectionDebit  Direction = "debit"
+	DirectionCredit Direction = "credit"
+)
+
+// Purchase is a one-off transaction paid from (or into) an account. Debit
+// purchases ("compra avulsa no débito") reduce the balance and feed the
+// month's account-linked "Compras Débito" expense; credits ("entradas",
+// only from synced sources like Pluggy) don't count toward that total.
 type Purchase struct {
 	ID        uuid.UUID
 	AccountID uuid.UUID
@@ -115,11 +140,20 @@ type Purchase struct {
 	Date      time.Time
 	// CategoryID optionally links the purchase to a user category.
 	CategoryID *uuid.UUID
+	// Direction is "debit" (saída) or "credit" (entrada). Empty means debit.
+	Direction Direction
+	// ExternalID links the purchase to its source transaction in an external
+	// provider (Pluggy); empty for manually created purchases. Used to avoid
+	// importing the same transaction twice on re-sync.
+	ExternalID string
 	// Position is the manual sort order within the account's list.
 	Position  int
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
+
+// IsCredit reports whether the purchase is money coming in (an "entrada").
+func (p *Purchase) IsCredit() bool { return p.Direction == DirectionCredit }
 
 // NewPurchase builds a new debit purchase under an account.
 func NewPurchase(accountID uuid.UUID, name string, amount shared.Money, date time.Time) (*Purchase, error) {
@@ -142,6 +176,36 @@ func NewPurchase(accountID uuid.UUID, name string, amount shared.Money, date tim
 		Date:      date,
 		CreatedAt: now,
 		UpdatedAt: now,
+	}, nil
+}
+
+// NewExternalPurchase builds a purchase imported from an external provider
+// (Pluggy). amount is the absolute magnitude; direction says whether it's a
+// debit or credit. externalID is the provider's transaction id, used to
+// deduplicate on re-sync.
+func NewExternalPurchase(accountID uuid.UUID, name string, amount shared.Money, date time.Time, direction Direction, externalID string, categoryID *uuid.UUID) (*Purchase, error) {
+	name = strings.TrimSpace(name)
+	if name == "" {
+		name = "Transação"
+	}
+	if date.IsZero() {
+		return nil, ErrInvalidPurchaseDate
+	}
+	if direction != DirectionCredit {
+		direction = DirectionDebit
+	}
+	now := time.Now().UTC()
+	return &Purchase{
+		ID:         uuid.New(),
+		AccountID:  accountID,
+		Name:       name,
+		Amount:     amount,
+		Date:       date,
+		CategoryID: categoryID,
+		Direction:  direction,
+		ExternalID: strings.TrimSpace(externalID),
+		CreatedAt:  now,
+		UpdatedAt:  now,
 	}, nil
 }
 

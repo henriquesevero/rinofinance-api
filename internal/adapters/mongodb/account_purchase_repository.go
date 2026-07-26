@@ -33,6 +33,8 @@ type accountPurchaseDoc struct {
 	Amount     bson.Decimal128 `bson:"amount"`
 	Date       time.Time       `bson:"date"`
 	CategoryID *string         `bson:"category_id,omitempty"`
+	Direction  string          `bson:"direction,omitempty"`
+	ExternalID string          `bson:"external_id,omitempty"`
 	Position   int             `bson:"position"`
 	CreatedAt  time.Time       `bson:"created_at"`
 	UpdatedAt  time.Time       `bson:"updated_at"`
@@ -50,6 +52,8 @@ func newAccountPurchaseDoc(p *domainaccount.Purchase) (accountPurchaseDoc, error
 		Amount:     amount,
 		Date:       p.Date,
 		CategoryID: uuidPtrToString(p.CategoryID),
+		Direction:  p.Direction,
+		ExternalID: p.ExternalID,
 		Position:   p.Position,
 		CreatedAt:  p.CreatedAt,
 		UpdatedAt:  p.UpdatedAt,
@@ -80,6 +84,8 @@ func (d accountPurchaseDoc) toDomain() (*domainaccount.Purchase, error) {
 		Amount:     amount,
 		Date:       d.Date,
 		CategoryID: categoryID,
+		Direction:  d.Direction,
+		ExternalID: d.ExternalID,
 		Position:   d.Position,
 		CreatedAt:  d.CreatedAt,
 		UpdatedAt:  d.UpdatedAt,
