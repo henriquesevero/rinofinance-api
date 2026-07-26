@@ -73,35 +73,6 @@ type Transaction struct {
 	Type        string  `json:"type"`
 }
 
-// Webhook is a Pluggy webhook registration (per application/client).
-type Webhook struct {
-	ID    string `json:"id"`
-	URL   string `json:"url"`
-	Event string `json:"event"`
-}
-
-// ListWebhooks returns the webhooks registered for this application.
-func (c *Client) ListWebhooks(ctx context.Context) ([]Webhook, error) {
-	var out struct {
-		Results []Webhook `json:"results"`
-	}
-	if err := c.get(ctx, c.baseURL+"/webhooks", &out); err != nil {
-		return nil, err
-	}
-	return out.Results, nil
-}
-
-// CreateWebhook registers a webhook URL for the given event (e.g.
-// "item/updated"), so Pluggy notifies us when a connection refreshes.
-func (c *Client) CreateWebhook(ctx context.Context, webhookURL, event string) (*Webhook, error) {
-	var out Webhook
-	body := map[string]string{"url": webhookURL, "event": event}
-	if err := c.post(ctx, c.baseURL+"/webhooks", body, &out); err != nil {
-		return nil, err
-	}
-	return &out, nil
-}
-
 // Item is a Pluggy connection to a financial institution, carrying the
 // connector (the bank/institution) it links to.
 type Item struct {
@@ -228,40 +199,6 @@ func (c *Client) get(ctx context.Context, urlStr string, out any) error {
 	}
 	if err := json.NewDecoder(resp.Body).Decode(out); err != nil {
 		return fmt.Errorf("erro ao decodificar resposta do Pluggy: %w", err)
-	}
-	return nil
-}
-
-// post performs an authenticated POST with a JSON body and decodes the JSON
-// response into out (out may be nil to ignore the body).
-func (c *Client) post(ctx context.Context, urlStr string, body any, out any) error {
-	key, err := c.apiKeyValue(ctx)
-	if err != nil {
-		return err
-	}
-	payload, err := json.Marshal(body)
-	if err != nil {
-		return err
-	}
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, urlStr, bytes.NewReader(payload))
-	if err != nil {
-		return err
-	}
-	req.Header.Set("X-API-KEY", key)
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Accept", "application/json")
-	resp, err := c.http.Do(req)
-	if err != nil {
-		return fmt.Errorf("erro ao chamar o Pluggy: %w", err)
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode/100 != 2 {
-		return fmt.Errorf("Pluggy retornou %d: %s", resp.StatusCode, readSnippet(resp.Body))
-	}
-	if out != nil {
-		if err := json.NewDecoder(resp.Body).Decode(out); err != nil {
-			return fmt.Errorf("erro ao decodificar resposta do Pluggy: %w", err)
-		}
 	}
 	return nil
 }

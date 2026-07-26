@@ -41,11 +41,6 @@ func NewRouter(h Handlers, tokens *auth.TokenIssuer, allowedOrigins []string) ht
 	mux.HandleFunc("POST /api/auth/register", h.Auth.Register)
 	mux.HandleFunc("POST /api/auth/login", h.Auth.Login)
 
-	// Public: Pluggy calls this to notify of updates (auto-update). It
-	// authenticates itself via a ?token= secret, not a user JWT, so it lives
-	// outside the protected mux. The specific pattern wins over "/api/".
-	mux.HandleFunc("POST /api/pluggy/webhook", h.Pluggy.Webhook)
-
 	protected := http.NewServeMux()
 
 	protected.HandleFunc("GET /api/dashboard/summary", h.Dashboard.GetSummary)

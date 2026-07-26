@@ -13,10 +13,6 @@ import (
 type Repository interface {
 	Create(ctx context.Context, a *Account) error
 	FindByID(ctx context.Context, id uuid.UUID) (*Account, error)
-	// FindByPluggyItemID returns any account linked to the given Pluggy
-	// connection (used to resolve the owning user from a webhook), or
-	// shared.ErrNotFound when none is linked.
-	FindByPluggyItemID(ctx context.Context, itemID string) (*Account, error)
 	ListByUser(ctx context.Context, userID uuid.UUID) ([]*Account, error)
 	Update(ctx context.Context, a *Account) error
 	Delete(ctx context.Context, id uuid.UUID) error

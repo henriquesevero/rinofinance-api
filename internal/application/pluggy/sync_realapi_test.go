@@ -99,14 +99,6 @@ func (f *fakeAccounts) FindByID(_ context.Context, id uuid.UUID) (*domainaccount
 	}
 	return nil, shared.ErrNotFound
 }
-func (f *fakeAccounts) FindByPluggyItemID(_ context.Context, itemID string) (*domainaccount.Account, error) {
-	for _, a := range f.list {
-		if a.PluggyItemID == itemID {
-			return a, nil
-		}
-	}
-	return nil, shared.ErrNotFound
-}
 func (f *fakeAccounts) ListByUser(_ context.Context, userID uuid.UUID) ([]*domainaccount.Account, error) {
 	var out []*domainaccount.Account
 	for _, a := range f.list {
