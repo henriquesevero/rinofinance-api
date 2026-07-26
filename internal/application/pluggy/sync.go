@@ -23,6 +23,10 @@ import (
 // ErrNotConfigured is returned when Pluggy credentials weren't supplied.
 var ErrNotConfigured = errors.New("integração com o Pluggy não está configurada")
 
+// ErrItemNotLinked is returned when a webhook references a Pluggy item that
+// no account is linked to (nothing to sync — safe to ignore).
+var ErrItemNotLinked = errors.New("nenhuma conta vinculada a este item do Pluggy")
+
 // Provider is the slice of the Pluggy API this use case needs; satisfied by
 // *adapters/pluggy.Client.
 type Provider interface {
@@ -137,6 +141,24 @@ func (uc *SyncItemUseCase) Execute(ctx context.Context, userID uuid.UUID, itemID
 	}
 
 	return res, nil
+}
+
+// ExecuteByItem syncs a Pluggy item without a caller-supplied user, resolving
+// the owner from an account already linked to that item. Used by the webhook
+// (auto-update). Returns ErrItemNotLinked when no account is linked yet.
+func (uc *SyncItemUseCase) ExecuteByItem(ctx context.Context, itemID string) (SyncResult, error) {
+	itemID = strings.TrimSpace(itemID)
+	if itemID == "" {
+		return SyncResult{}, fmt.Errorf("itemId é obrigatório")
+	}
+	acc, err := uc.accounts.FindByPluggyItemID(ctx, itemID)
+	if err != nil {
+		if errors.Is(err, shared.ErrNotFound) {
+			return SyncResult{}, ErrItemNotLinked
+		}
+		return SyncResult{}, fmt.Errorf("erro ao resolver usuário do item: %w", err)
+	}
+	return uc.Execute(ctx, acc.UserID, itemID)
 }
 
 // importTransactions imports an account's transactions as purchases, skipping

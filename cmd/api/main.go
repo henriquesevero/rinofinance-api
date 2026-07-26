@@ -149,6 +149,9 @@ func main() {
 	// case that mirrors a connection's checking accounts and transactions.
 	pluggyClient := pluggy.NewClient(cfg.PluggyClientID, cfg.PluggyClientSecret)
 	syncPluggyItem := apppluggy.NewSyncItemUseCase(pluggyClient, accountRepo, accountPurchaseRepo, categoryRepo)
+	if pluggyClient.Configured() && cfg.PluggyWebhookURL != "" {
+		ensurePluggyWebhook(pluggyClient, cfg.PluggyWebhookURL)
+	}
 
 	// Handlers (primary/driving adapter).
 	handlers := rest.Handlers{
@@ -175,7 +178,7 @@ func main() {
 			createAccountPurchase, updateAccountPurchase, deleteAccountPurchase,
 		),
 		Dashboard: handler.NewDashboardHandler(getMonthlySummary),
-		Pluggy:    handler.NewPluggyHandler(syncPluggyItem),
+		Pluggy:    handler.NewPluggyHandler(syncPluggyItem, cfg.PluggyWebhookSecret),
 	}
 
 	router := rest.NewRouter(handlers, tokens, cfg.AllowedOrigins)
@@ -207,4 +210,29 @@ func main() {
 	if err := srv.Shutdown(ctx); err != nil {
 		log.Printf("erro ao encerrar servidor graciosamente: %v", err)
 	}
+}
+
+// ensurePluggyWebhook registers the auto-update webhook with Pluggy if it
+// isn't already registered, so a connection's refreshes reach us. Failures
+// are logged, never fatal — the manual sync still works without it.
+func ensurePluggyWebhook(client *pluggy.Client, webhookURL string) {
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+
+	hooks, err := client.ListWebhooks(ctx)
+	if err != nil {
+		log.Printf("pluggy: não foi possível listar webhooks: %v", err)
+		return
+	}
+	for _, h := range hooks {
+		if h.URL == webhookURL {
+			log.Printf("pluggy: webhook já registrado (%s)", h.Event)
+			return
+		}
+	}
+	if _, err := client.CreateWebhook(ctx, webhookURL, "item/updated"); err != nil {
+		log.Printf("pluggy: não foi possível registrar webhook: %v", err)
+		return
+	}
+	log.Printf("pluggy: webhook de auto-update registrado")
 }

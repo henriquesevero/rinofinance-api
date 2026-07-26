@@ -43,6 +43,16 @@ type Config struct {
 	// responds that it isn't configured).
 	PluggyClientID     string
 	PluggyClientSecret string
+
+	// PluggyWebhookURL is the public URL Pluggy calls when a connection
+	// updates (enables auto-update). When set, the server registers it with
+	// Pluggy on startup. It should carry the secret as a ?token= query so the
+	// endpoint can authenticate incoming calls.
+	PluggyWebhookURL string
+
+	// PluggyWebhookSecret is the token expected on incoming webhook calls
+	// (?token=). Empty disables the check (dev only).
+	PluggyWebhookSecret string
 }
 
 // Load reads and validates configuration from environment variables,
@@ -90,15 +100,17 @@ func Load() (*Config, error) {
 	}
 
 	return &Config{
-		Port:               port,
-		MongoURI:           mongoURI,
-		MongoDatabase:      mongoDatabase,
-		JWTSecret:          jwtSecret,
-		JWTTTL:             ttl,
-		AllowedOrigins:     origins,
-		RegistrationCode:   registrationCode,
-		PluggyClientID:     os.Getenv("PLUGGY_CLIENT_ID"),
-		PluggyClientSecret: os.Getenv("PLUGGY_CLIENT_SECRET"),
+		Port:                port,
+		MongoURI:            mongoURI,
+		MongoDatabase:       mongoDatabase,
+		JWTSecret:           jwtSecret,
+		JWTTTL:              ttl,
+		AllowedOrigins:      origins,
+		RegistrationCode:    registrationCode,
+		PluggyClientID:      os.Getenv("PLUGGY_CLIENT_ID"),
+		PluggyClientSecret:  os.Getenv("PLUGGY_CLIENT_SECRET"),
+		PluggyWebhookURL:    os.Getenv("PLUGGY_WEBHOOK_URL"),
+		PluggyWebhookSecret: os.Getenv("PLUGGY_WEBHOOK_SECRET"),
 	}, nil
 }
 

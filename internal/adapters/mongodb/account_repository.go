@@ -111,6 +111,19 @@ func (r *AccountRepository) FindByID(ctx context.Context, id uuid.UUID) (*domain
 	return doc.toDomain()
 }
 
+// FindByPluggyItemID fetches any account linked to a Pluggy connection,
+// used to resolve the owning user when a webhook arrives.
+func (r *AccountRepository) FindByPluggyItemID(ctx context.Context, itemID string) (*domainaccount.Account, error) {
+	var doc accountDoc
+	if err := r.collection.FindOne(ctx, bson.M{"pluggy_item_id": itemID}).Decode(&doc); err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return nil, shared.ErrNotFound
+		}
+		return nil, fmt.Errorf("erro ao buscar conta por item do Pluggy: %w", err)
+	}
+	return doc.toDomain()
+}
+
 // ListByUser fetches every account belonging to userID, ordered by the
 // user's manual position (with name as a stable tiebreaker).
 func (r *AccountRepository) ListByUser(ctx context.Context, userID uuid.UUID) ([]*domainaccount.Account, error) {
