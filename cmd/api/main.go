@@ -230,9 +230,7 @@ func ensurePluggyWebhook(client *pluggy.Client, webhookURL string) {
 			return
 		}
 	}
-	// "all" covers the events Pluggy requires (item/created, item/updated,
-	// transactions/created|updated|deleted); the handler ignores the rest.
-	if _, err := client.CreateWebhook(ctx, webhookURL, "all"); err != nil {
+	if _, err := client.CreateWebhook(ctx, webhookURL, "item/updated"); err != nil {
 		log.Printf("pluggy: não foi possível registrar webhook: %v", err)
 		return
 	}

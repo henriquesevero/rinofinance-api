@@ -82,8 +82,7 @@ func (h *PluggyHandler) Webhook(w http.ResponseWriter, r *http.Request) {
 // isSyncEvent reports whether an event means fresh account/transaction data.
 func isSyncEvent(event string) bool {
 	switch event {
-	case "item/created",
-		"item/updated",
+	case "item/updated",
 		"transactions/created",
 		"transactions/updated",
 		"transactions/deleted":
