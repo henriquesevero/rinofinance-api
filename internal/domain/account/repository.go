@@ -29,14 +29,10 @@ type PurchaseRepository interface {
 	DeleteByAccount(ctx context.Context, accountID uuid.UUID) error
 }
 
-// TotalPurchases sums the amounts of the given purchases, counting debits
-// only — credits ("entradas") are money in, not spending.
+// TotalPurchases sums the amounts of the given purchases.
 func TotalPurchases(purchases []*Purchase) shared.Money {
 	total := shared.Zero
 	for _, p := range purchases {
-		if p.IsCredit() {
-			continue
-		}
 		total = total.Add(p.Amount)
 	}
 	return total
@@ -48,9 +44,6 @@ func TotalPurchases(purchases []*Purchase) shared.Money {
 func MonthlyPurchasesTotal(reference time.Time, purchases []*Purchase) shared.Money {
 	total := shared.Zero
 	for _, p := range purchases {
-		if p.IsCredit() {
-			continue
-		}
 		if p.IsInMonth(reference) {
 			total = total.Add(p.Amount)
 		}

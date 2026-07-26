@@ -10,7 +10,6 @@ import (
 	"net/http"
 
 	appauth "rinofinance-api/internal/application/auth"
-	apppluggy "rinofinance-api/internal/application/pluggy"
 	domaincard "rinofinance-api/internal/domain/card"
 	domainexpense "rinofinance-api/internal/domain/expense"
 	"rinofinance-api/internal/domain/shared"
@@ -68,9 +67,6 @@ func statusForError(err error) int {
 	case errors.Is(err, shared.ErrUnauthorized),
 		errors.Is(err, appauth.ErrInvalidRegistrationCode):
 		return http.StatusForbidden
-
-	case errors.Is(err, apppluggy.ErrNotConfigured):
-		return http.StatusServiceUnavailable
 
 	case errors.Is(err, shared.ErrEmptyName),
 		errors.Is(err, shared.ErrInvalidAmount),

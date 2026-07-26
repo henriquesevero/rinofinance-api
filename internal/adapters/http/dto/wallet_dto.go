@@ -33,31 +33,23 @@ func (r AccountPurchaseRequest) ParseDate() (time.Time, error) {
 	return time.Parse(DateOnlyLayout, r.Date)
 }
 
-// AccountPurchaseResponse is the public representation of an account
-// transaction. Direction is "debit" (saída) or "credit" (entrada) — synced
-// credits are money in; manual purchases are always debits.
+// AccountPurchaseResponse is the public representation of a debit purchase.
 type AccountPurchaseResponse struct {
 	ID         uuid.UUID    `json:"id"`
 	Name       string       `json:"name"`
 	Amount     shared.Money `json:"amount"`
 	Date       string       `json:"date"`
 	CategoryID *uuid.UUID   `json:"categoryId,omitempty"`
-	Direction  string       `json:"direction"`
 }
 
 // NewAccountPurchaseResponse builds a response from the domain Purchase.
 func NewAccountPurchaseResponse(p *domainaccount.Purchase) AccountPurchaseResponse {
-	direction := p.Direction
-	if direction == "" {
-		direction = domainaccount.DirectionDebit
-	}
 	return AccountPurchaseResponse{
 		ID:         p.ID,
 		Name:       p.Name,
 		Amount:     p.Amount,
 		Date:       p.Date.Format(DateOnlyLayout),
 		CategoryID: p.CategoryID,
-		Direction:  direction,
 	}
 }
 
