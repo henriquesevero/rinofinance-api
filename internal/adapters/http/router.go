@@ -79,6 +79,7 @@ func NewRouter(h Handlers, tokens *auth.TokenIssuer, allowedOrigins []string) ht
 	protected.HandleFunc("PUT /api/cards/{cardId}/installment-purchases/order", h.Card.ReorderInstallmentPurchases)
 	protected.HandleFunc("PUT /api/installment-purchases/{id}", h.Card.UpdateInstallmentPurchase)
 	protected.HandleFunc("PATCH /api/installment-purchases/{id}/flag", h.Card.ToggleInstallmentPurchaseFlag)
+	protected.HandleFunc("PATCH /api/installment-purchases/{id}/owed-exclusion", h.Card.ToggleInstallmentPurchaseOwedExclusion)
 	protected.HandleFunc("DELETE /api/installment-purchases/{id}", h.Card.DeleteInstallmentPurchase)
 	protected.HandleFunc("POST /api/cards/{cardId}/subscriptions", h.Card.CreateSubscription)
 	protected.HandleFunc("PUT /api/cards/{cardId}/subscriptions/order", h.Card.ReorderSubscriptions)

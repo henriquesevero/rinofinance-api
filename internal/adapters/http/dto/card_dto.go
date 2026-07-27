@@ -159,6 +159,7 @@ type InstallmentPurchaseResponse struct {
 	RemainingTotal        shared.Money `json:"remainingTotal"`
 	Domain                string       `json:"domain,omitempty"`
 	Flagged               bool         `json:"flagged"`
+	ExcludedFromOwed      bool         `json:"excludedFromOwed"`
 	CategoryID            *uuid.UUID   `json:"categoryId,omitempty"`
 }
 
@@ -175,6 +176,7 @@ func NewInstallmentPurchaseResponse(p *domaincard.InstallmentPurchase, reference
 		RemainingTotal:        p.RemainingTotal(reference),
 		Domain:                p.Domain,
 		Flagged:               p.Flagged,
+		ExcludedFromOwed:      p.ExcludedFromOwed,
 		CategoryID:            p.CategoryID,
 	}
 }

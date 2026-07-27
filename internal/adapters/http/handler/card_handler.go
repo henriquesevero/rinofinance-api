@@ -19,6 +19,7 @@ type CardHandler struct {
 	createInstallmentPurchase   *appcard.CreateInstallmentPurchaseUseCase
 	updateInstallmentPurchase   *appcard.UpdateInstallmentPurchaseUseCase
 	toggleInstallmentFlag       *appcard.ToggleInstallmentPurchaseFlagUseCase
+	toggleInstallmentOwed       *appcard.ToggleInstallmentPurchaseOwedUseCase
 	deleteInstallmentPurchase   *appcard.DeleteInstallmentPurchaseUseCase
 	createSubscription          *appcard.CreateSubscriptionUseCase
 	updateSubscription          *appcard.UpdateSubscriptionUseCase
@@ -39,6 +40,7 @@ func NewCardHandler(
 	createInstallmentPurchase *appcard.CreateInstallmentPurchaseUseCase,
 	updateInstallmentPurchase *appcard.UpdateInstallmentPurchaseUseCase,
 	toggleInstallmentFlag *appcard.ToggleInstallmentPurchaseFlagUseCase,
+	toggleInstallmentOwed *appcard.ToggleInstallmentPurchaseOwedUseCase,
 	deleteInstallmentPurchase *appcard.DeleteInstallmentPurchaseUseCase,
 	createSubscription *appcard.CreateSubscriptionUseCase,
 	updateSubscription *appcard.UpdateSubscriptionUseCase,
@@ -57,6 +59,7 @@ func NewCardHandler(
 		createInstallmentPurchase:   createInstallmentPurchase,
 		updateInstallmentPurchase:   updateInstallmentPurchase,
 		toggleInstallmentFlag:       toggleInstallmentFlag,
+		toggleInstallmentOwed:       toggleInstallmentOwed,
 		deleteInstallmentPurchase:   deleteInstallmentPurchase,
 		createSubscription:          createSubscription,
 		updateSubscription:          updateSubscription,
@@ -241,6 +244,33 @@ func (h *CardHandler) ToggleInstallmentPurchaseFlag(w http.ResponseWriter, r *ht
 	}
 
 	p, err := h.toggleInstallmentFlag.Execute(r.Context(), userID, purchaseID)
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+
+	reference, err := parseReferenceMonth(r)
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, dto.NewInstallmentPurchaseResponse(p, reference))
+}
+
+// ToggleInstallmentPurchaseOwedExclusion handles
+// PATCH /api/installment-purchases/{id}/owed-exclusion, flipping whether the
+// purchase counts toward the card's "total que devo" sum.
+func (h *CardHandler) ToggleInstallmentPurchaseOwedExclusion(w http.ResponseWriter, r *http.Request) {
+	userID, ok := requireUserID(w, r)
+	if !ok {
+		return
+	}
+	purchaseID, ok := parseUUIDPathValue(w, r, "id")
+	if !ok {
+		return
+	}
+
+	p, err := h.toggleInstallmentOwed.Execute(r.Context(), userID, purchaseID)
 	if err != nil {
 		writeError(w, err)
 		return

@@ -111,6 +111,7 @@ func main() {
 	createInstallmentPurchase := appcard.NewCreateInstallmentPurchaseUseCase(cardRepo, installmentRepo)
 	updateInstallmentPurchase := appcard.NewUpdateInstallmentPurchaseUseCase(cardRepo, installmentRepo)
 	toggleInstallmentFlag := appcard.NewToggleInstallmentPurchaseFlagUseCase(cardRepo, installmentRepo)
+	toggleInstallmentOwed := appcard.NewToggleInstallmentPurchaseOwedUseCase(cardRepo, installmentRepo)
 	deleteInstallmentPurchase := appcard.NewDeleteInstallmentPurchaseUseCase(cardRepo, installmentRepo)
 	createSubscription := appcard.NewCreateSubscriptionUseCase(cardRepo, subscriptionRepo)
 	updateSubscription := appcard.NewUpdateSubscriptionUseCase(cardRepo, subscriptionRepo)
@@ -158,7 +159,7 @@ func main() {
 		),
 		Card: handler.NewCardHandler(
 			createCard, updateCard, deleteCard, listCards,
-			createInstallmentPurchase, updateInstallmentPurchase, toggleInstallmentFlag, deleteInstallmentPurchase,
+			createInstallmentPurchase, updateInstallmentPurchase, toggleInstallmentFlag, toggleInstallmentOwed, deleteInstallmentPurchase,
 			createSubscription, updateSubscription, deleteSubscription, importCardItems, clearCardItems,
 			reorderCards, reorderInstallmentPurchases, reorderSubscriptions,
 		),

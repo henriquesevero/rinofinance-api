@@ -156,6 +156,11 @@ type InstallmentPurchase struct {
 	// paints the whole row red. It's a pure status marker, independent of
 	// any calculation.
 	Flagged bool
+	// ExcludedFromOwed lets the user drop this purchase from the "total que
+	// devo" (payoff) sum shown on the card — e.g. a shared/reimbursed
+	// purchase they don't consider their own debt. It does not affect the
+	// monthly bill, just the debt total the UI computes.
+	ExcludedFromOwed bool
 	// CategoryID optionally links this purchase to a user category. Nil
 	// means uncategorized.
 	CategoryID *uuid.UUID
@@ -269,6 +274,13 @@ func (p *InstallmentPurchase) SetDomain(domain string) {
 // row red in the UI.
 func (p *InstallmentPurchase) SetFlagged(flagged bool) {
 	p.Flagged = flagged
+	p.UpdatedAt = time.Now().UTC()
+}
+
+// SetExcludedFromOwed includes (false) or excludes (true) this purchase
+// from the card's "total que devo" payoff sum.
+func (p *InstallmentPurchase) SetExcludedFromOwed(excluded bool) {
+	p.ExcludedFromOwed = excluded
 	p.UpdatedAt = time.Now().UTC()
 }
 
