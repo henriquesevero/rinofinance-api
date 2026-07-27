@@ -34,6 +34,7 @@ type creditCardDoc struct {
 	ImageURL    string          `bson:"image_url,omitempty"`
 	CreditLimit bson.Decimal128 `bson:"credit_limit"`
 	DueDay      int             `bson:"due_day,omitempty"`
+	ClosingDay  int             `bson:"closing_day,omitempty"`
 	Position    int             `bson:"position"`
 	CreatedAt   time.Time       `bson:"created_at"`
 	UpdatedAt   time.Time       `bson:"updated_at"`
@@ -53,6 +54,7 @@ func newCreditCardDoc(c *domaincard.CreditCard) (creditCardDoc, error) {
 		ImageURL:    c.ImageURL,
 		CreditLimit: creditLimit,
 		DueDay:      c.DueDay,
+		ClosingDay:  c.ClosingDay,
 		Position:    c.Position,
 		CreatedAt:   c.CreatedAt,
 		UpdatedAt:   c.UpdatedAt,
@@ -81,6 +83,7 @@ func (d creditCardDoc) toDomain() (*domaincard.CreditCard, error) {
 		ImageURL:    d.ImageURL,
 		CreditLimit: creditLimit,
 		DueDay:      d.DueDay,
+		ClosingDay:  d.ClosingDay,
 		Position:    d.Position,
 		CreatedAt:   d.CreatedAt,
 		UpdatedAt:   d.UpdatedAt,

@@ -129,6 +129,7 @@ type CardResponse struct {
 	ImageURL    string       `json:"imageUrl,omitempty"`
 	CreditLimit shared.Money `json:"creditLimit"`
 	DueDay      int          `json:"dueDay,omitempty"`
+	ClosingDay  int          `json:"closingDay,omitempty"`
 }
 
 // NewCardResponse builds a CardResponse from the domain CreditCard.
@@ -141,6 +142,7 @@ func NewCardResponse(c *domaincard.CreditCard) CardResponse {
 		ImageURL:    c.ImageURL,
 		CreditLimit: c.CreditLimit,
 		DueDay:      c.DueDay,
+		ClosingDay:  c.ClosingDay,
 	}
 }
 
@@ -208,6 +210,7 @@ type CardOverviewResponse struct {
 	ImageURL             string                        `json:"imageUrl,omitempty"`
 	CreditLimit          shared.Money                  `json:"creditLimit"`
 	DueDay               int                           `json:"dueDay,omitempty"`
+	ClosingDay           int                           `json:"closingDay,omitempty"`
 	InstallmentPurchases []InstallmentPurchaseResponse `json:"installmentPurchases"`
 	Subscriptions        []SubscriptionResponse        `json:"subscriptions"`
 	MonthlyTotal         shared.Money                  `json:"monthlyTotal"`
@@ -241,6 +244,7 @@ func NewCardsOverviewResponse(overviews []appcard.CardOverview, grandTotal share
 			ImageURL:             o.Card.ImageURL,
 			CreditLimit:          o.Card.CreditLimit,
 			DueDay:               o.Card.DueDay,
+			ClosingDay:           o.Card.ClosingDay,
 			InstallmentPurchases: purchases,
 			Subscriptions:        subscriptions,
 			MonthlyTotal:         o.MonthlyTotal,
