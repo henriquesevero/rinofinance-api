@@ -1,11 +1,13 @@
 package handler
 
 import (
+	"errors"
 	"net/http"
 
 	appwishlist "rinofinance-api/internal/application/wishlist"
 
 	"rinofinance-api/internal/adapters/http/dto"
+	"rinofinance-api/internal/pkg/unfurl"
 )
 
 // WishlistHandler exposes the "itens para comprar" endpoints: sections and
@@ -31,6 +33,21 @@ func (h *WishlistHandler) Overview(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, dto.NewWishlistOverviewResponse(overview))
+}
+
+// Unfurl handles GET /api/wishlist/unfurl?url=... — fetches a store page and
+// returns its product image/title/price so the item form can auto-fill.
+func (h *WishlistHandler) Unfurl(w http.ResponseWriter, r *http.Request) {
+	if _, ok := requireUserID(w, r); !ok {
+		return
+	}
+	meta, err := unfurl.Fetch(r.Context(), r.URL.Query().Get("url"))
+	if errors.Is(err, unfurl.ErrInvalidURL) {
+		writeError(w, errBadRequest)
+		return
+	}
+	// Any other failure is treated as "nothing found" — return empty fields.
+	writeJSON(w, http.StatusOK, meta)
 }
 
 // CreateSection handles POST /api/wishlist/sections.
