@@ -15,6 +15,8 @@ type AccountHandler struct {
 	changeEmail    *appprofile.ChangeEmailUseCase
 	changePassword *appprofile.ChangePasswordUseCase
 	deleteAccount  *appprofile.DeleteAccountUseCase
+	shareData      *appprofile.ShareDataUseCase
+	stopSharing    *appprofile.StopSharingUseCase
 }
 
 // NewAccountHandler wires the dependencies for AccountHandler.
@@ -23,18 +25,55 @@ func NewAccountHandler(
 	changeEmail *appprofile.ChangeEmailUseCase,
 	changePassword *appprofile.ChangePasswordUseCase,
 	deleteAccount *appprofile.DeleteAccountUseCase,
+	shareData *appprofile.ShareDataUseCase,
+	stopSharing *appprofile.StopSharingUseCase,
 ) *AccountHandler {
 	return &AccountHandler{
 		updateProfile:  updateProfile,
 		changeEmail:    changeEmail,
 		changePassword: changePassword,
 		deleteAccount:  deleteAccount,
+		shareData:      shareData,
+		stopSharing:    stopSharing,
 	}
+}
+
+// ShareData handles POST /api/account/share — link this account to another
+// (household sharing) using its email + password.
+func (h *AccountHandler) ShareData(w http.ResponseWriter, r *http.Request) {
+	userID, ok := requireAuthUserID(w, r)
+	if !ok {
+		return
+	}
+	var req dto.ShareDataRequest
+	if err := decodeJSON(r, &req); err != nil {
+		writeError(w, err)
+		return
+	}
+	u, err := h.shareData.Execute(r.Context(), userID, req.Email, req.Password)
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, dto.NewUserResponse(u))
+}
+
+// StopSharing handles POST /api/account/unshare — revert to own data.
+func (h *AccountHandler) StopSharing(w http.ResponseWriter, r *http.Request) {
+	userID, ok := requireAuthUserID(w, r)
+	if !ok {
+		return
+	}
+	if err := h.stopSharing.Execute(r.Context(), userID); err != nil {
+		writeError(w, err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
 }
 
 // UpdateProfile handles PUT /api/account/profile.
 func (h *AccountHandler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
-	userID, ok := requireUserID(w, r)
+	userID, ok := requireAuthUserID(w, r)
 	if !ok {
 		return
 	}
@@ -55,7 +94,7 @@ func (h *AccountHandler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 
 // ChangeEmail handles PUT /api/account/email.
 func (h *AccountHandler) ChangeEmail(w http.ResponseWriter, r *http.Request) {
-	userID, ok := requireUserID(w, r)
+	userID, ok := requireAuthUserID(w, r)
 	if !ok {
 		return
 	}
@@ -76,7 +115,7 @@ func (h *AccountHandler) ChangeEmail(w http.ResponseWriter, r *http.Request) {
 
 // ChangePassword handles PUT /api/account/password.
 func (h *AccountHandler) ChangePassword(w http.ResponseWriter, r *http.Request) {
-	userID, ok := requireUserID(w, r)
+	userID, ok := requireAuthUserID(w, r)
 	if !ok {
 		return
 	}
@@ -96,7 +135,7 @@ func (h *AccountHandler) ChangePassword(w http.ResponseWriter, r *http.Request) 
 
 // DeleteAccount handles DELETE /api/account.
 func (h *AccountHandler) DeleteAccount(w http.ResponseWriter, r *http.Request) {
-	userID, ok := requireUserID(w, r)
+	userID, ok := requireAuthUserID(w, r)
 	if !ok {
 		return
 	}

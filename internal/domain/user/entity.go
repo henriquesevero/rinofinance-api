@@ -31,8 +31,24 @@ type User struct {
 	// until the user uploads one, in which case the UI falls back to
 	// initials.
 	AvatarURL string
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	// DataOwnerID, when set, points at another user whose data this account
+	// sees and edits (shared household). Nil means the account uses its own
+	// data. Auth/profile always act on the real user, never the owner.
+	DataOwnerID *uuid.UUID
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+}
+
+// ShareDataWith makes this user see/edit ownerID's data.
+func (u *User) ShareDataWith(ownerID uuid.UUID) {
+	u.DataOwnerID = &ownerID
+	u.UpdatedAt = time.Now().UTC()
+}
+
+// StopSharing reverts the account to using its own data.
+func (u *User) StopSharing() {
+	u.DataOwnerID = nil
+	u.UpdatedAt = time.Now().UTC()
 }
 
 // NewUser builds a new User aggregate, validating the invariants that must

@@ -6,6 +6,9 @@ package main
 
 import (
 	"context"
+
+	"github.com/google/uuid"
+
 	"log"
 	"net/http"
 	"os"
@@ -84,6 +87,16 @@ func main() {
 	deleteAccount := appprofile.NewDeleteAccountUseCase(
 		userRepo, hasher, incomeRepo, expenseRepo, cardRepo, installmentRepo, subscriptionRepo, investmentRepo,
 	)
+	shareData := appprofile.NewShareDataUseCase(userRepo, hasher)
+	stopSharing := appprofile.NewStopSharingUseCase(userRepo)
+
+	// Resolves the effective data owner for a user (self, or a shared account).
+	resolveDataOwner := func(id uuid.UUID) uuid.UUID {
+		if u, err := userRepo.FindByID(context.Background(), id); err == nil && u.DataOwnerID != nil {
+			return *u.DataOwnerID
+		}
+		return id
+	}
 
 	accountBalanceResolver := appincome.NewAccountBalanceResolver(accountRepo)
 	createIncome := appincome.NewCreateIncomeUseCase(incomeRepo)
@@ -153,7 +166,7 @@ func main() {
 	// Handlers (primary/driving adapter).
 	handlers := rest.Handlers{
 		Auth:    handler.NewAuthHandler(registerUser, loginUser),
-		Account: handler.NewAccountHandler(updateProfile, changeEmail, changePassword, deleteAccount),
+		Account: handler.NewAccountHandler(updateProfile, changeEmail, changePassword, deleteAccount, shareData, stopSharing),
 		Income: handler.NewIncomeHandler(
 			createIncome, createAccountLinkedIncome, updateIncome, toggleIncome, toggleIncomeReceived, deleteIncome,
 			listIncomes, reorderIncomes,
@@ -178,7 +191,7 @@ func main() {
 		Dashboard: handler.NewDashboardHandler(getMonthlySummary),
 	}
 
-	router := rest.NewRouter(handlers, tokens, cfg.AllowedOrigins)
+	router := rest.NewRouter(handlers, tokens, resolveDataOwner, cfg.AllowedOrigins)
 
 	srv := &http.Server{
 		Addr:         ":" + cfg.Port,

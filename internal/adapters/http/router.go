@@ -6,6 +6,8 @@ package rest
 import (
 	"net/http"
 
+	"github.com/google/uuid"
+
 	"rinofinance-api/internal/adapters/http/handler"
 	"rinofinance-api/internal/adapters/http/middleware"
 	"rinofinance-api/internal/pkg/auth"
@@ -29,7 +31,7 @@ type Handlers struct {
 // NewRouter builds the full HTTP routing table, applying CORS to every
 // route and JWT authentication to every route except /health and
 // /api/auth/*.
-func NewRouter(h Handlers, tokens *auth.TokenIssuer, allowedOrigins []string) http.Handler {
+func NewRouter(h Handlers, tokens *auth.TokenIssuer, resolveOwner func(uuid.UUID) uuid.UUID, allowedOrigins []string) http.Handler {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
@@ -49,6 +51,8 @@ func NewRouter(h Handlers, tokens *auth.TokenIssuer, allowedOrigins []string) ht
 	protected.HandleFunc("PUT /api/account/email", h.Account.ChangeEmail)
 	protected.HandleFunc("PUT /api/account/password", h.Account.ChangePassword)
 	protected.HandleFunc("DELETE /api/account", h.Account.DeleteAccount)
+	protected.HandleFunc("POST /api/account/share", h.Account.ShareData)
+	protected.HandleFunc("POST /api/account/unshare", h.Account.StopSharing)
 
 	protected.HandleFunc("GET /api/incomes", h.Income.List)
 	protected.HandleFunc("POST /api/incomes", h.Income.Create)
@@ -117,7 +121,7 @@ func NewRouter(h Handlers, tokens *auth.TokenIssuer, allowedOrigins []string) ht
 	protected.HandleFunc("PUT /api/account-purchases/{id}", h.Wallet.UpdatePurchase)
 	protected.HandleFunc("DELETE /api/account-purchases/{id}", h.Wallet.DeletePurchase)
 
-	mux.Handle("/api/", middleware.Auth(tokens)(protected))
+	mux.Handle("/api/", middleware.Auth(tokens, resolveOwner)(protected))
 
 	return middleware.CORS(allowedOrigins)(mux)
 }

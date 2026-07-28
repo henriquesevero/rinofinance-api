@@ -30,6 +30,7 @@ func NewWishlistSectionRepository(db *mongo.Database) *WishlistSectionRepository
 type wishlistSectionDoc struct {
 	ID        string    `bson:"_id"`
 	UserID    string    `bson:"user_id"`
+	Kind      string    `bson:"kind,omitempty"`
 	Name      string    `bson:"name"`
 	Position  int       `bson:"position"`
 	CreatedAt time.Time `bson:"created_at"`
@@ -40,6 +41,7 @@ func newWishlistSectionDoc(s *domainwishlist.Section) wishlistSectionDoc {
 	return wishlistSectionDoc{
 		ID:        s.ID.String(),
 		UserID:    s.UserID.String(),
+		Kind:      s.Kind,
 		Name:      s.Name,
 		Position:  s.Position,
 		CreatedAt: s.CreatedAt,
@@ -59,6 +61,7 @@ func (d wishlistSectionDoc) toDomain() (*domainwishlist.Section, error) {
 	return &domainwishlist.Section{
 		ID:        id,
 		UserID:    userID,
+		Kind:      d.Kind,
 		Name:      d.Name,
 		Position:  d.Position,
 		CreatedAt: d.CreatedAt,
@@ -84,9 +87,9 @@ func (r *WishlistSectionRepository) FindByID(ctx context.Context, id uuid.UUID) 
 	return doc.toDomain()
 }
 
-func (r *WishlistSectionRepository) ListByUser(ctx context.Context, userID uuid.UUID) ([]*domainwishlist.Section, error) {
+func (r *WishlistSectionRepository) ListByUser(ctx context.Context, userID uuid.UUID, kind string) ([]*domainwishlist.Section, error) {
 	opts := options.Find().SetSort(bson.D{{Key: "position", Value: 1}, {Key: "created_at", Value: 1}})
-	cursor, err := r.collection.Find(ctx, bson.M{"user_id": userID.String()}, opts)
+	cursor, err := r.collection.Find(ctx, bson.M{"user_id": userID.String(), "kind": kind}, opts)
 	if err != nil {
 		return nil, fmt.Errorf("erro ao listar seções: %w", err)
 	}
@@ -136,6 +139,7 @@ func NewWishlistItemRepository(db *mongo.Database) *WishlistItemRepository {
 type wishlistItemDoc struct {
 	ID        string          `bson:"_id"`
 	UserID    string          `bson:"user_id"`
+	Kind      string          `bson:"kind,omitempty"`
 	SectionID *string         `bson:"section_id,omitempty"`
 	Name      string          `bson:"name"`
 	URL       string          `bson:"url,omitempty"`
@@ -154,6 +158,7 @@ func newWishlistItemDoc(i *domainwishlist.Item) (wishlistItemDoc, error) {
 	return wishlistItemDoc{
 		ID:        i.ID.String(),
 		UserID:    i.UserID.String(),
+		Kind:      i.Kind,
 		SectionID: uuidPtrToString(i.SectionID),
 		Name:      i.Name,
 		URL:       i.URL,
@@ -185,6 +190,7 @@ func (d wishlistItemDoc) toDomain() (*domainwishlist.Item, error) {
 	return &domainwishlist.Item{
 		ID:        id,
 		UserID:    userID,
+		Kind:      d.Kind,
 		SectionID: sectionID,
 		Name:      d.Name,
 		URL:       d.URL,
@@ -218,9 +224,9 @@ func (r *WishlistItemRepository) FindByID(ctx context.Context, id uuid.UUID) (*d
 	return doc.toDomain()
 }
 
-func (r *WishlistItemRepository) ListByUser(ctx context.Context, userID uuid.UUID) ([]*domainwishlist.Item, error) {
+func (r *WishlistItemRepository) ListByUser(ctx context.Context, userID uuid.UUID, kind string) ([]*domainwishlist.Item, error) {
 	opts := options.Find().SetSort(bson.D{{Key: "position", Value: 1}, {Key: "created_at", Value: 1}})
-	cursor, err := r.collection.Find(ctx, bson.M{"user_id": userID.String()}, opts)
+	cursor, err := r.collection.Find(ctx, bson.M{"user_id": userID.String(), "kind": kind}, opts)
 	if err != nil {
 		return nil, fmt.Errorf("erro ao listar itens: %w", err)
 	}

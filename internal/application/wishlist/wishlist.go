@@ -33,12 +33,12 @@ func NewService(sections domainwishlist.SectionRepository, items domainwishlist.
 }
 
 // GetOverview returns the user's sections, items and total value.
-func (s *Service) GetOverview(ctx context.Context, userID uuid.UUID) (Overview, error) {
-	sections, err := s.sections.ListByUser(ctx, userID)
+func (s *Service) GetOverview(ctx context.Context, userID uuid.UUID, kind string) (Overview, error) {
+	sections, err := s.sections.ListByUser(ctx, userID, kind)
 	if err != nil {
 		return Overview{}, fmt.Errorf("erro ao listar seções: %w", err)
 	}
-	items, err := s.items.ListByUser(ctx, userID)
+	items, err := s.items.ListByUser(ctx, userID, kind)
 	if err != nil {
 		return Overview{}, fmt.Errorf("erro ao listar itens: %w", err)
 	}
@@ -50,12 +50,12 @@ func (s *Service) GetOverview(ctx context.Context, userID uuid.UUID) (Overview, 
 }
 
 // CreateSection adds a section, appended to the end of the user's ordering.
-func (s *Service) CreateSection(ctx context.Context, userID uuid.UUID, name string) (*domainwishlist.Section, error) {
-	sec, err := domainwishlist.NewSection(userID, name)
+func (s *Service) CreateSection(ctx context.Context, userID uuid.UUID, kind, name string) (*domainwishlist.Section, error) {
+	sec, err := domainwishlist.NewSection(userID, kind, name)
 	if err != nil {
 		return nil, err
 	}
-	existing, err := s.sections.ListByUser(ctx, userID)
+	existing, err := s.sections.ListByUser(ctx, userID, kind)
 	if err != nil {
 		return nil, fmt.Errorf("erro ao contar seções: %w", err)
 	}
@@ -95,7 +95,7 @@ func (s *Service) DeleteSection(ctx context.Context, userID, sectionID uuid.UUID
 		return shared.ErrNotFound
 	}
 
-	items, err := s.items.ListByUser(ctx, userID)
+	items, err := s.items.ListByUser(ctx, userID, sec.Kind)
 	if err != nil {
 		return fmt.Errorf("erro ao listar itens: %w", err)
 	}
@@ -125,18 +125,18 @@ type ItemInput struct {
 
 // CreateItem adds a product to the wishlist, validating the section belongs
 // to the user when provided.
-func (s *Service) CreateItem(ctx context.Context, userID uuid.UUID, in ItemInput) (*domainwishlist.Item, error) {
+func (s *Service) CreateItem(ctx context.Context, userID uuid.UUID, kind string, in ItemInput) (*domainwishlist.Item, error) {
 	if err := s.verifySection(ctx, userID, in.SectionID); err != nil {
 		return nil, err
 	}
-	item, err := domainwishlist.NewItem(userID, in.Name, in.URL, in.Price)
+	item, err := domainwishlist.NewItem(userID, kind, in.Name, in.URL, in.Price)
 	if err != nil {
 		return nil, err
 	}
 	item.SetImage(in.ImageURL)
 	item.SetSection(in.SectionID)
 
-	existing, err := s.items.ListByUser(ctx, userID)
+	existing, err := s.items.ListByUser(ctx, userID, kind)
 	if err != nil {
 		return nil, fmt.Errorf("erro ao contar itens: %w", err)
 	}

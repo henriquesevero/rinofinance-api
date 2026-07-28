@@ -27,7 +27,7 @@ func (h *WishlistHandler) Overview(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	overview, err := h.svc.GetOverview(r.Context(), userID)
+	overview, err := h.svc.GetOverview(r.Context(), userID, wishlistKind(r))
 	if err != nil {
 		writeError(w, err)
 		return
@@ -61,7 +61,7 @@ func (h *WishlistHandler) CreateSection(w http.ResponseWriter, r *http.Request) 
 		writeError(w, err)
 		return
 	}
-	s, err := h.svc.CreateSection(r.Context(), userID, req.Name)
+	s, err := h.svc.CreateSection(r.Context(), userID, wishlistKind(r), req.Name)
 	if err != nil {
 		writeError(w, err)
 		return
@@ -125,7 +125,7 @@ func (h *WishlistHandler) CreateItem(w http.ResponseWriter, r *http.Request) {
 		writeError(w, err)
 		return
 	}
-	item, err := h.svc.CreateItem(r.Context(), userID, in)
+	item, err := h.svc.CreateItem(r.Context(), userID, wishlistKind(r), in)
 	if err != nil {
 		writeError(w, err)
 		return
@@ -176,6 +176,15 @@ func (h *WishlistHandler) DeleteItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
+}
+
+// wishlistKind reads the list kind from the query string, defaulting to
+// "wishlist" (itens a comprar); "owned" selects the possessions list.
+func wishlistKind(r *http.Request) string {
+	if r.URL.Query().Get("kind") == "owned" {
+		return "owned"
+	}
+	return "wishlist"
 }
 
 // itemInput maps a request onto the application ItemInput, resolving the

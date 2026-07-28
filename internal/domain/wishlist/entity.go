@@ -15,8 +15,11 @@ import (
 
 // Section is a user-defined grouping of wishlist items (e.g. "Eletrônicos").
 type Section struct {
-	ID        uuid.UUID
-	UserID    uuid.UUID
+	ID     uuid.UUID
+	UserID uuid.UUID
+	// Kind separates the two lists sharing this model: "wishlist" (itens a
+	// comprar) and "owned" (itens que possuo / patrimônio).
+	Kind      string
 	Name      string
 	Position  int
 	CreatedAt time.Time
@@ -24,13 +27,13 @@ type Section struct {
 }
 
 // NewSection builds a new section for a user.
-func NewSection(userID uuid.UUID, name string) (*Section, error) {
+func NewSection(userID uuid.UUID, kind, name string) (*Section, error) {
 	name = strings.TrimSpace(name)
 	if name == "" {
 		return nil, shared.ErrEmptyName
 	}
 	now := time.Now().UTC()
-	return &Section{ID: uuid.New(), UserID: userID, Name: name, CreatedAt: now, UpdatedAt: now}, nil
+	return &Section{ID: uuid.New(), UserID: userID, Kind: kind, Name: name, CreatedAt: now, UpdatedAt: now}, nil
 }
 
 // Rename updates the section's display name.
@@ -54,6 +57,8 @@ func (s *Section) SetPosition(position int) {
 type Item struct {
 	ID     uuid.UUID
 	UserID uuid.UUID
+	// Kind: "wishlist" or "owned".
+	Kind string
 	// SectionID optionally links the item to a section. Nil means the item
 	// is ungrouped ("Sem seção").
 	SectionID *uuid.UUID
@@ -71,7 +76,7 @@ type Item struct {
 }
 
 // NewItem builds a new wishlist item for a user.
-func NewItem(userID uuid.UUID, name, url string, price shared.Money) (*Item, error) {
+func NewItem(userID uuid.UUID, kind, name, url string, price shared.Money) (*Item, error) {
 	name = strings.TrimSpace(name)
 	if name == "" {
 		return nil, shared.ErrEmptyName
@@ -83,6 +88,7 @@ func NewItem(userID uuid.UUID, name, url string, price shared.Money) (*Item, err
 	return &Item{
 		ID:        uuid.New(),
 		UserID:    userID,
+		Kind:      kind,
 		Name:      name,
 		URL:       strings.TrimSpace(url),
 		Price:     price,

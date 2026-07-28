@@ -31,6 +31,14 @@ type UserResponse struct {
 	Name      string    `json:"name"`
 	Email     string    `json:"email"`
 	AvatarURL string    `json:"avatarUrl,omitempty"`
+	// Shared is true when this account is viewing another's data (household).
+	Shared bool `json:"shared"`
+}
+
+// ShareDataRequest is the payload for POST /api/account/share.
+type ShareDataRequest struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
 }
 
 // AuthResponse is returned by both register and login.
@@ -41,5 +49,5 @@ type AuthResponse struct {
 
 // NewUserResponse builds a UserResponse from the domain User.
 func NewUserResponse(u *domainuser.User) UserResponse {
-	return UserResponse{ID: u.ID, Name: u.Name, Email: u.Email, AvatarURL: u.AvatarURL}
+	return UserResponse{ID: u.ID, Name: u.Name, Email: u.Email, AvatarURL: u.AvatarURL, Shared: u.DataOwnerID != nil}
 }

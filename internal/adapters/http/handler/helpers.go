@@ -42,6 +42,18 @@ func requireUserID(w http.ResponseWriter, r *http.Request) (uuid.UUID, bool) {
 	return userID, true
 }
 
+// requireAuthUserID returns the real authenticated user's id (not the shared
+// data owner) — used by profile/account actions that must target the real
+// account.
+func requireAuthUserID(w http.ResponseWriter, r *http.Request) (uuid.UUID, bool) {
+	userID, ok := middleware.AuthUserIDFromContext(r.Context())
+	if !ok {
+		writeError(w, errNoAuthenticatedUser)
+		return uuid.Nil, false
+	}
+	return userID, true
+}
+
 // parseUUIDPathValue reads a {name} path value (Go 1.22+ ServeMux
 // pattern) as a uuid.UUID, writing a 404-mappable error on failure so a
 // malformed ID behaves the same as a missing resource.

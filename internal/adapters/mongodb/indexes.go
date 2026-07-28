@@ -54,6 +54,17 @@ func EnsureIndexes(ctx context.Context, db *mongo.Database) error {
 		return err
 	}
 
+	// Wishlist docs created before the "kind" split default to "wishlist".
+	for _, col := range []string{wishlistSectionsCollection, wishlistItemsCollection} {
+		if _, err := db.Collection(col).UpdateMany(
+			ctx,
+			bson.M{"kind": bson.M{"$exists": false}},
+			bson.M{"$set": bson.M{"kind": "wishlist"}},
+		); err != nil {
+			return fmt.Errorf("erro ao preencher kind em %s: %w", col, err)
+		}
+	}
+
 	return nil
 }
 

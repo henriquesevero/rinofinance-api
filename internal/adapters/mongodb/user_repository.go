@@ -30,6 +30,7 @@ type userDoc struct {
 	Email        string    `bson:"email"`
 	PasswordHash string    `bson:"password_hash"`
 	AvatarURL    string    `bson:"avatar_url,omitempty"`
+	DataOwnerID  *string   `bson:"data_owner_id,omitempty"`
 	CreatedAt    time.Time `bson:"created_at"`
 	UpdatedAt    time.Time `bson:"updated_at"`
 }
@@ -41,6 +42,7 @@ func newUserDoc(u *domainuser.User) userDoc {
 		Email:        u.Email,
 		PasswordHash: u.PasswordHash,
 		AvatarURL:    u.AvatarURL,
+		DataOwnerID:  uuidPtrToString(u.DataOwnerID),
 		CreatedAt:    u.CreatedAt,
 		UpdatedAt:    u.UpdatedAt,
 	}
@@ -51,12 +53,17 @@ func (d userDoc) toDomain() (*domainuser.User, error) {
 	if err != nil {
 		return nil, fmt.Errorf("erro ao converter ID de usuário: %w", err)
 	}
+	ownerID, err := stringPtrToUUID(d.DataOwnerID, "ID do dono dos dados")
+	if err != nil {
+		return nil, err
+	}
 	return &domainuser.User{
 		ID:           id,
 		Name:         d.Name,
 		Email:        d.Email,
 		PasswordHash: d.PasswordHash,
 		AvatarURL:    d.AvatarURL,
+		DataOwnerID:  ownerID,
 		CreatedAt:    d.CreatedAt,
 		UpdatedAt:    d.UpdatedAt,
 	}, nil
