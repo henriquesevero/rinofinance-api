@@ -28,8 +28,12 @@ type Metadata struct {
 const browserUA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"
 
 var (
-	metaTagRe = regexp.MustCompile(`(?is)<meta\b[^>]*>`)
+	metaTagRe  = regexp.MustCompile(`(?is)<meta\b[^>]*>`)
+	linkTagRe  = regexp.MustCompile(`(?is)<link\b[^>]*>`)
 	titleTagRe = regexp.MustCompile(`(?is)<title[^>]*>(.*?)</title>`)
+	// Amazon serves the product photo via JS, but the URLs (under /images/I/)
+	// are still present in the HTML — grab the first one as a fallback.
+	amazonImgRe = regexp.MustCompile(`https://[a-z0-9.\-]*media-amazon\.com/images/I/[A-Za-z0-9._%\-]+\.(?:jpg|jpeg|png)`)
 )
 
 // Fetch downloads the page at rawURL and pulls its metadata. Returns
@@ -67,6 +71,12 @@ func Fetch(ctx context.Context, rawURL string) (Metadata, error) {
 	html := string(body)
 
 	image := metaContent(html, "og:image", "og:image:url", "og:image:secure_url", "twitter:image", "twitter:image:src")
+	if image == "" {
+		image = linkHref(html, "image_src")
+	}
+	if image == "" {
+		image = amazonImgRe.FindString(html)
+	}
 	if image != "" {
 		if abs, err := u.Parse(strings.TrimSpace(image)); err == nil {
 			image = abs.String()
@@ -101,6 +111,19 @@ func metaContent(html string, keys ...string) string {
 				if c := attrValue(tag, "content"); c != "" {
 					return c
 				}
+			}
+		}
+	}
+	return ""
+}
+
+// linkHref returns the href of the first <link> whose rel matches (e.g.
+// rel="image_src", a common non-OG image hint).
+func linkHref(html, rel string) string {
+	for _, tag := range linkTagRe.FindAllString(html, -1) {
+		if strings.EqualFold(attrValue(tag, "rel"), rel) {
+			if h := attrValue(tag, "href"); h != "" {
+				return h
 			}
 		}
 	}
