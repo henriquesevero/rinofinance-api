@@ -37,6 +37,8 @@ func EnsureIndexes(ctx context.Context, db *mongo.Database) error {
 		categoriesCollection:           {userScoped("user_id")},
 		accountsCollection:             {userScoped("user_id")},
 		accountPurchasesCollection:     {userScoped("account_id")},
+		wishlistSectionsCollection:     {userScoped("user_id")},
+		wishlistItemsCollection:        {userScoped("user_id")},
 		monthlyStatusCollection: {
 			{Keys: bson.D{{Key: "user_id", Value: 1}, {Key: "item_type", Value: 1}, {Key: "month", Value: 1}}},
 		},

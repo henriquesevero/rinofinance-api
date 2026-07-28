@@ -46,6 +46,8 @@ const (
 	accountsCollection             = "accounts"
 	accountPurchasesCollection     = "account_purchases"
 	monthlyStatusCollection        = "monthly_item_status"
+	wishlistSectionsCollection     = "wishlist_sections"
+	wishlistItemsCollection        = "wishlist_items"
 )
 
 // toDecimal128 converts a domain Money value into the BSON Decimal128 used

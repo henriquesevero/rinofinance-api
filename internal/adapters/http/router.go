@@ -21,6 +21,7 @@ type Handlers struct {
 	Card       *handler.CardHandler
 	Investment *handler.InvestmentHandler
 	Category   *handler.CategoryHandler
+	Wishlist   *handler.WishlistHandler
 	Wallet     *handler.WalletHandler
 	Dashboard  *handler.DashboardHandler
 }
@@ -97,6 +98,14 @@ func NewRouter(h Handlers, tokens *auth.TokenIssuer, allowedOrigins []string) ht
 	protected.HandleFunc("PUT /api/categories/order", h.Category.Reorder)
 	protected.HandleFunc("PUT /api/categories/{id}", h.Category.Update)
 	protected.HandleFunc("DELETE /api/categories/{id}", h.Category.Delete)
+
+	protected.HandleFunc("GET /api/wishlist", h.Wishlist.Overview)
+	protected.HandleFunc("POST /api/wishlist/sections", h.Wishlist.CreateSection)
+	protected.HandleFunc("PUT /api/wishlist/sections/{id}", h.Wishlist.UpdateSection)
+	protected.HandleFunc("DELETE /api/wishlist/sections/{id}", h.Wishlist.DeleteSection)
+	protected.HandleFunc("POST /api/wishlist/items", h.Wishlist.CreateItem)
+	protected.HandleFunc("PUT /api/wishlist/items/{id}", h.Wishlist.UpdateItem)
+	protected.HandleFunc("DELETE /api/wishlist/items/{id}", h.Wishlist.DeleteItem)
 
 	protected.HandleFunc("GET /api/accounts", h.Wallet.List)
 	protected.HandleFunc("POST /api/accounts", h.Wallet.Create)

@@ -25,6 +25,7 @@ import (
 	appincome "rinofinance-api/internal/application/income"
 	appinvestment "rinofinance-api/internal/application/investment"
 	appprofile "rinofinance-api/internal/application/profile"
+	appwishlist "rinofinance-api/internal/application/wishlist"
 	"rinofinance-api/internal/config"
 	pkgauth "rinofinance-api/internal/pkg/auth"
 )
@@ -66,6 +67,8 @@ func main() {
 	accountRepo := mongodb.NewAccountRepository(db)
 	accountPurchaseRepo := mongodb.NewAccountPurchaseRepository(db)
 	monthlyStatusRepo := mongodb.NewMonthlyStatusRepository(db)
+	wishlistSectionRepo := mongodb.NewWishlistSectionRepository(db)
+	wishlistItemRepo := mongodb.NewWishlistItemRepository(db)
 
 	// Technical adapters used by the auth use cases.
 	hasher := pkgauth.BcryptHasher{}
@@ -143,6 +146,8 @@ func main() {
 	deleteAsset := appinvestment.NewDeleteAssetUseCase(investmentRepo)
 	listAssets := appinvestment.NewListAssetsUseCase(investmentRepo)
 
+	wishlistService := appwishlist.NewService(wishlistSectionRepo, wishlistItemRepo)
+
 	getMonthlySummary := appdashboard.NewGetMonthlySummaryUseCase(incomeRepo, expenseRepo, cardAmountResolver, accountLinkResolver, accountBalanceResolver, monthlyStatusRepo)
 
 	// Handlers (primary/driving adapter).
@@ -165,6 +170,7 @@ func main() {
 		),
 		Investment: handler.NewInvestmentHandler(createAsset, updateAsset, toggleAsset, deleteAsset, listAssets),
 		Category:   handler.NewCategoryHandler(createCategory, updateCategory, deleteCategory, listCategories, reorderCategories),
+		Wishlist:   handler.NewWishlistHandler(wishlistService),
 		Wallet: handler.NewWalletHandler(
 			createAccount, updateAccount, deleteAccount2, listAccounts, reorderAccounts,
 			createAccountPurchase, updateAccountPurchase, deleteAccountPurchase,
