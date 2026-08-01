@@ -63,7 +63,9 @@ func Load() (*Config, error) {
 		return nil, fmt.Errorf("variável de ambiente JWT_SECRET é obrigatória")
 	}
 
-	ttl := 24 * time.Hour
+	// Long-lived by default so a personal-use app doesn't force frequent
+	// re-logins (especially on mobile/PWA); override via JWT_TTL.
+	ttl := 30 * 24 * time.Hour
 	if raw := os.Getenv("JWT_TTL"); raw != "" {
 		parsed, err := time.ParseDuration(raw)
 		if err != nil {
