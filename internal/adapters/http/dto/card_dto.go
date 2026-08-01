@@ -105,6 +105,10 @@ type ImportFaturaResponse struct {
 type ClearCardRequest struct {
 	InstallmentPurchaseIDs []string `json:"installmentPurchaseIds"`
 	SubscriptionIDs        []string `json:"subscriptionIds"`
+	// Mode is "end" (stop from the reference month onward, keeping past
+	// months) or "delete" (permanently remove from every month). Empty
+	// defaults to "end", the non-destructive choice.
+	Mode string `json:"mode"`
 }
 
 // ClearCardResponse reports how many items were removed.
@@ -161,6 +165,10 @@ type InstallmentPurchaseResponse struct {
 	Flagged               bool         `json:"flagged"`
 	ExcludedFromOwed      bool         `json:"excludedFromOwed"`
 	CategoryID            *uuid.UUID   `json:"categoryId,omitempty"`
+	// CanceledFrom is the first month (YYYY-MM-DD, first of month) this item
+	// stops billing, when it was ended early. Empty when it follows its
+	// natural schedule.
+	CanceledFrom string `json:"canceledFrom,omitempty"`
 }
 
 // NewInstallmentPurchaseResponse builds an InstallmentPurchaseResponse,
@@ -178,7 +186,17 @@ func NewInstallmentPurchaseResponse(p *domaincard.InstallmentPurchase, reference
 		Flagged:               p.Flagged,
 		ExcludedFromOwed:      p.ExcludedFromOwed,
 		CategoryID:            p.CategoryID,
+		CanceledFrom:          formatMonthPtr(p.CanceledFrom),
 	}
+}
+
+// formatMonthPtr renders an optional month marker as YYYY-MM-DD, or "" when
+// nil — used for the CanceledFrom field on card items.
+func formatMonthPtr(t *time.Time) string {
+	if t == nil {
+		return ""
+	}
+	return t.Format(DateOnlyLayout)
 }
 
 // SubscriptionResponse is the public representation of a Subscription.
@@ -188,6 +206,7 @@ type SubscriptionResponse struct {
 	MonthlyAmount shared.Money `json:"monthlyAmount"`
 	Domain        string       `json:"domain,omitempty"`
 	CategoryID    *uuid.UUID   `json:"categoryId,omitempty"`
+	CanceledFrom  string       `json:"canceledFrom,omitempty"`
 }
 
 // NewSubscriptionResponse builds a SubscriptionResponse from the domain
@@ -199,6 +218,7 @@ func NewSubscriptionResponse(s *domaincard.Subscription) SubscriptionResponse {
 		MonthlyAmount: s.MonthlyAmount,
 		Domain:        s.Domain,
 		CategoryID:    s.CategoryID,
+		CanceledFrom:  formatMonthPtr(s.CanceledFrom),
 	}
 }
 

@@ -3,6 +3,7 @@ package card
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 
@@ -80,6 +81,7 @@ func TestClearCardItems_DeletesSelectedOwnItems(t *testing.T) {
 		context.Background(), userID, card.ID,
 		[]uuid.UUID{p1.ID, otherCardPurchase.ID, uuid.New() /* nonexistent */},
 		[]uuid.UUID{s1.ID},
+		ClearModeDelete, time.Now().UTC(),
 	)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -108,7 +110,7 @@ func TestClearCardItems_RejectsForeignCard(t *testing.T) {
 		&lookupSubscriptionRepo{items: map[uuid.UUID]*domaincard.Subscription{}},
 	)
 
-	_, err := uc.Execute(context.Background(), uuid.New(), card.ID, nil, nil)
+	_, err := uc.Execute(context.Background(), uuid.New(), card.ID, nil, nil, ClearModeDelete, time.Now().UTC())
 	if err == nil {
 		t.Fatal("expected error clearing a card owned by another user")
 	}

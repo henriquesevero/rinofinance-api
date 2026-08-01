@@ -34,6 +34,7 @@ type subscriptionDoc struct {
 	MonthlyAmount bson.Decimal128 `bson:"monthly_amount"`
 	Domain        string          `bson:"domain,omitempty"`
 	CategoryID    *string         `bson:"category_id,omitempty"`
+	CanceledFrom  *time.Time      `bson:"canceled_from,omitempty"`
 	Position      int             `bson:"position"`
 	CreatedAt     time.Time       `bson:"created_at"`
 	UpdatedAt     time.Time       `bson:"updated_at"`
@@ -51,6 +52,7 @@ func newSubscriptionDoc(s *domaincard.Subscription) (subscriptionDoc, error) {
 		MonthlyAmount: amount,
 		Domain:        s.Domain,
 		CategoryID:    uuidPtrToString(s.CategoryID),
+		CanceledFrom:  s.CanceledFrom,
 		Position:      s.Position,
 		CreatedAt:     s.CreatedAt,
 		UpdatedAt:     s.UpdatedAt,
@@ -81,6 +83,7 @@ func (d subscriptionDoc) toDomain() (*domaincard.Subscription, error) {
 		MonthlyAmount: amount,
 		Domain:        d.Domain,
 		CategoryID:    categoryID,
+		CanceledFrom:  d.CanceledFrom,
 		Position:      d.Position,
 		CreatedAt:     d.CreatedAt,
 		UpdatedAt:     d.UpdatedAt,

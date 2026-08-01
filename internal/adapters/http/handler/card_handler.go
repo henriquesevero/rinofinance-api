@@ -472,8 +472,18 @@ func (h *CardHandler) ClearCard(w http.ResponseWriter, r *http.Request) {
 		writeError(w, errBadRequest)
 		return
 	}
+	reference, err := parseReferenceMonth(r)
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+	// "end" (default) keeps past months; only an explicit "delete" wipes.
+	mode := appcard.ClearModeEnd
+	if req.Mode == string(appcard.ClearModeDelete) {
+		mode = appcard.ClearModeDelete
+	}
 
-	result, err := h.clearCardItems.Execute(r.Context(), userID, cardID, purchaseIDs, subscriptionIDs)
+	result, err := h.clearCardItems.Execute(r.Context(), userID, cardID, purchaseIDs, subscriptionIDs, mode, reference)
 	if err != nil {
 		writeError(w, err)
 		return

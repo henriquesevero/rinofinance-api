@@ -15,6 +15,18 @@ import (
 	"rinofinance-api/internal/domain/shared"
 )
 
+// monthIndex collapses a date to a comparable whole-month ordinal, so two
+// dates can be compared purely by calendar month (year*12 + month).
+func monthIndex(t time.Time) int {
+	return t.Year()*12 + int(t.Month())
+}
+
+// firstOfMonthUTC normalizes a date to midnight on the first day of its month
+// (UTC) — the canonical form stored for a "canceled from" marker.
+func firstOfMonthUTC(t time.Time) time.Time {
+	return time.Date(t.Year(), t.Month(), 1, 0, 0, 0, 0, time.UTC)
+}
+
 // CreditCard is the aggregate root grouping installment purchases and
 // subscriptions billed together (e.g. "Nubank", "Inter").
 type CreditCard struct {
@@ -164,6 +176,12 @@ type InstallmentPurchase struct {
 	// CategoryID optionally links this purchase to a user category. Nil
 	// means uncategorized.
 	CategoryID *uuid.UUID
+	// CanceledFrom, when set, is the first month (normalized to its first
+	// day) in which this purchase is no longer billed — used by "limpar
+	// fatura" / the row's "excluir" to stop an item from the current month
+	// onward WITHOUT rewriting the past: months before it keep billing it.
+	// Nil means it follows its natural installment schedule.
+	CanceledFrom *time.Time
 	// Position is the manual sort order within the card's list of purchases.
 	Position  int
 	CreatedAt time.Time
@@ -214,20 +232,47 @@ func (p *InstallmentPurchase) monthsElapsed(reference time.Time) int {
 	return (reference.Year()-first.Year())*12 + int(reference.Month()) - int(first.Month())
 }
 
+// canceledBy reports whether the reference month is at or after this
+// purchase's cancellation month (so it no longer bills).
+func (p *InstallmentPurchase) canceledBy(reference time.Time) bool {
+	return p.CanceledFrom != nil && monthIndex(reference) >= monthIndex(*p.CanceledFrom)
+}
+
+// EndFrom stops this purchase from the given month onward (normalized to the
+// first of that month), preserving every earlier month's bill. Passing a
+// month at or before it started effectively hides it everywhere.
+func (p *InstallmentPurchase) EndFrom(month time.Time) {
+	m := firstOfMonthUTC(month)
+	p.CanceledFrom = &m
+	p.UpdatedAt = time.Now().UTC()
+}
+
 // IsActiveOn reports whether this purchase still bills an installment in
-// the reference month (i.e. it has started and isn't paid off yet).
+// the reference month (started, not paid off, and not canceled by then).
 func (p *InstallmentPurchase) IsActiveOn(reference time.Time) bool {
 	elapsed := p.monthsElapsed(reference)
-	return elapsed >= 0 && elapsed < p.TotalInstallments
+	return elapsed >= 0 && elapsed < p.TotalInstallments && !p.canceledBy(reference)
 }
 
 // RemainingInstallments returns how many installments (including the
-// reference month's, if active) are still owed as of the reference month.
+// reference month's, if active) are still owed as of the reference month —
+// capped at the cancellation month when the purchase was ended early.
 func (p *InstallmentPurchase) RemainingInstallments(reference time.Time) int {
+	if p.canceledBy(reference) {
+		return 0
+	}
 	elapsed := p.monthsElapsed(reference)
 	remaining := p.TotalInstallments - elapsed
 	if remaining > p.TotalInstallments {
 		remaining = p.TotalInstallments
+	}
+	// An early cancellation stops billing at CanceledFrom: only the months
+	// from the reference up to (but excluding) that month still count.
+	if p.CanceledFrom != nil {
+		untilCancel := monthIndex(*p.CanceledFrom) - monthIndex(reference)
+		if untilCancel < remaining {
+			remaining = untilCancel
+		}
 	}
 	if remaining < 0 {
 		remaining = 0
@@ -308,6 +353,10 @@ type Subscription struct {
 	// CategoryID optionally links this subscription to a user category. Nil
 	// means uncategorized.
 	CategoryID *uuid.UUID
+	// CanceledFrom, when set, is the first month (normalized to its first
+	// day) from which this subscription is no longer billed. Earlier months
+	// still show it, so "encerrar" preserves the past. Nil means ongoing.
+	CanceledFrom *time.Time
 	// Position is the manual sort order within the card's subscription list.
 	Position  int
 	CreatedAt time.Time
@@ -376,6 +425,30 @@ func (s *Subscription) UpdateMonthlyAmount(amount shared.Money) error {
 	return nil
 }
 
+// EndFrom stops this subscription from the given month onward (normalized to
+// the first of that month), preserving every earlier month's bill.
+func (s *Subscription) EndFrom(month time.Time) {
+	m := firstOfMonthUTC(month)
+	s.CanceledFrom = &m
+	s.UpdatedAt = time.Now().UTC()
+}
+
+// IsActiveOn reports whether this subscription bills in the reference month
+// (i.e. it hasn't been canceled by then).
+func (s *Subscription) IsActiveOn(reference time.Time) bool {
+	return s.CanceledFrom == nil || monthIndex(reference) < monthIndex(*s.CanceledFrom)
+}
+
+// MonthlyChargeAmount returns the amount this subscription contributes to the
+// card's bill for the reference month: its fixed amount while active, or zero
+// once canceled.
+func (s *Subscription) MonthlyChargeAmount(reference time.Time) shared.Money {
+	if !s.IsActiveOn(reference) {
+		return shared.Zero
+	}
+	return s.MonthlyAmount
+}
+
 // MonthlyTotal sums the current-month charge across a card's installment
 // purchases and subscriptions. It is the single source of truth consumed
 // by both the "por cartão" and "Total Geral" figures in Aba 2, and by the
@@ -386,7 +459,7 @@ func MonthlyTotal(reference time.Time, purchases []*InstallmentPurchase, subscri
 		total = total.Add(p.MonthlyChargeAmount(reference))
 	}
 	for _, s := range subscriptions {
-		total = total.Add(s.MonthlyAmount)
+		total = total.Add(s.MonthlyChargeAmount(reference))
 	}
 	return total
 }
