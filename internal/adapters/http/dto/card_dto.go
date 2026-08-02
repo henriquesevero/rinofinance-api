@@ -72,6 +72,9 @@ type SubscriptionRequest struct {
 type ImportFaturaRequest struct {
 	InstallmentPurchases []ImportInstallmentItem  `json:"installmentPurchases"`
 	Subscriptions        []ImportSubscriptionItem `json:"subscriptions"`
+	// ReferenceMonth ("YYYY-MM") is the fatura's month; imported items become
+	// visible only from it onward. Empty falls back to no lower bound.
+	ReferenceMonth string `json:"referenceMonth"`
 }
 
 // ImportInstallmentItem is one installment purchase parsed from a
@@ -169,6 +172,9 @@ type InstallmentPurchaseResponse struct {
 	// stops billing, when it was ended early. Empty when it follows its
 	// natural schedule.
 	CanceledFrom string `json:"canceledFrom,omitempty"`
+	// EffectiveFrom is the first month it becomes visible (set on import), or
+	// empty when visible per its natural schedule.
+	EffectiveFrom string `json:"effectiveFrom,omitempty"`
 }
 
 // NewInstallmentPurchaseResponse builds an InstallmentPurchaseResponse,
@@ -187,6 +193,7 @@ func NewInstallmentPurchaseResponse(p *domaincard.InstallmentPurchase, reference
 		ExcludedFromOwed:      p.ExcludedFromOwed,
 		CategoryID:            p.CategoryID,
 		CanceledFrom:          formatMonthPtr(p.CanceledFrom),
+		EffectiveFrom:         formatMonthPtr(p.EffectiveFrom),
 	}
 }
 
@@ -207,6 +214,7 @@ type SubscriptionResponse struct {
 	Domain        string       `json:"domain,omitempty"`
 	CategoryID    *uuid.UUID   `json:"categoryId,omitempty"`
 	CanceledFrom  string       `json:"canceledFrom,omitempty"`
+	EffectiveFrom string       `json:"effectiveFrom,omitempty"`
 }
 
 // NewSubscriptionResponse builds a SubscriptionResponse from the domain
@@ -219,6 +227,7 @@ func NewSubscriptionResponse(s *domaincard.Subscription) SubscriptionResponse {
 		Domain:        s.Domain,
 		CategoryID:    s.CategoryID,
 		CanceledFrom:  formatMonthPtr(s.CanceledFrom),
+		EffectiveFrom: formatMonthPtr(s.EffectiveFrom),
 	}
 }
 

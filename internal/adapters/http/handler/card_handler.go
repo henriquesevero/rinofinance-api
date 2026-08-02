@@ -434,7 +434,15 @@ func (h *CardHandler) ImportFatura(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	result, err := h.importCardItems.Execute(r.Context(), userID, cardID, installments, subscriptions)
+	// Fatura month ("YYYY-MM") → items become visible only from it onward.
+	var referenceMonth time.Time
+	if req.ReferenceMonth != "" {
+		if m, err := time.Parse("2006-01", req.ReferenceMonth); err == nil {
+			referenceMonth = m
+		}
+	}
+
+	result, err := h.importCardItems.Execute(r.Context(), userID, cardID, installments, subscriptions, referenceMonth)
 	if err != nil {
 		writeError(w, err)
 		return

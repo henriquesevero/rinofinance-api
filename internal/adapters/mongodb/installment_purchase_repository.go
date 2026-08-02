@@ -39,6 +39,7 @@ type installmentPurchaseDoc struct {
 	ExcludedFromOwed     bool            `bson:"excluded_from_owed,omitempty"`
 	CategoryID           *string         `bson:"category_id,omitempty"`
 	CanceledFrom         *time.Time      `bson:"canceled_from,omitempty"`
+	EffectiveFrom        *time.Time      `bson:"effective_from,omitempty"`
 	Position             int             `bson:"position"`
 	CreatedAt            time.Time       `bson:"created_at"`
 	UpdatedAt            time.Time       `bson:"updated_at"`
@@ -61,6 +62,7 @@ func newInstallmentPurchaseDoc(p *domaincard.InstallmentPurchase) (installmentPu
 		ExcludedFromOwed:     p.ExcludedFromOwed,
 		CategoryID:           uuidPtrToString(p.CategoryID),
 		CanceledFrom:         p.CanceledFrom,
+		EffectiveFrom:        p.EffectiveFrom,
 		Position:             p.Position,
 		CreatedAt:            p.CreatedAt,
 		UpdatedAt:            p.UpdatedAt,
@@ -96,6 +98,7 @@ func (d installmentPurchaseDoc) toDomain() (*domaincard.InstallmentPurchase, err
 		ExcludedFromOwed:     d.ExcludedFromOwed,
 		CategoryID:           categoryID,
 		CanceledFrom:         d.CanceledFrom,
+		EffectiveFrom:        d.EffectiveFrom,
 		Position:             d.Position,
 		CreatedAt:            d.CreatedAt,
 		UpdatedAt:            d.UpdatedAt,

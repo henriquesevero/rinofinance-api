@@ -182,6 +182,12 @@ type InstallmentPurchase struct {
 	// onward WITHOUT rewriting the past: months before it keep billing it.
 	// Nil means it follows its natural installment schedule.
 	CanceledFrom *time.Time
+	// EffectiveFrom, when set, is the first month this purchase becomes
+	// visible — even if its installment schedule reaches further back. Set on
+	// import to the fatura's month so a mid-way parcela (e.g. 2/3) shows only
+	// from the imported bill onward, never populating earlier months it was
+	// never tracked in. Nil = visible per its natural schedule.
+	EffectiveFrom *time.Time
 	// Position is the manual sort order within the card's list of purchases.
 	Position  int
 	CreatedAt time.Time
@@ -247,11 +253,24 @@ func (p *InstallmentPurchase) EndFrom(month time.Time) {
 	p.UpdatedAt = time.Now().UTC()
 }
 
-// IsActiveOn reports whether this purchase still bills an installment in
-// the reference month (started, not paid off, and not canceled by then).
+// startedBy reports whether the purchase is visible in the reference month —
+// its EffectiveFrom lower bound (if any) has been reached.
+func (p *InstallmentPurchase) startedBy(reference time.Time) bool {
+	return p.EffectiveFrom == nil || monthIndex(reference) >= monthIndex(*p.EffectiveFrom)
+}
+
+// SetEffectiveFrom bounds this purchase to be visible only from `month` on.
+func (p *InstallmentPurchase) SetEffectiveFrom(month time.Time) {
+	m := firstOfMonthUTC(month)
+	p.EffectiveFrom = &m
+	p.UpdatedAt = time.Now().UTC()
+}
+
+// IsActiveOn reports whether this purchase still bills an installment in the
+// reference month (visible, started, not paid off, not canceled by then).
 func (p *InstallmentPurchase) IsActiveOn(reference time.Time) bool {
 	elapsed := p.monthsElapsed(reference)
-	return elapsed >= 0 && elapsed < p.TotalInstallments && !p.canceledBy(reference)
+	return elapsed >= 0 && elapsed < p.TotalInstallments && p.startedBy(reference) && !p.canceledBy(reference)
 }
 
 // RemainingInstallments returns how many installments (including the
@@ -357,6 +376,10 @@ type Subscription struct {
 	// day) from which this subscription is no longer billed. Earlier months
 	// still show it, so "encerrar" preserves the past. Nil means ongoing.
 	CanceledFrom *time.Time
+	// EffectiveFrom, when set, is the first month this subscription becomes
+	// visible — set on import so it doesn't retroactively appear in months
+	// before the imported bill. Nil means active from any month.
+	EffectiveFrom *time.Time
 	// Position is the manual sort order within the card's subscription list.
 	Position  int
 	CreatedAt time.Time
@@ -433,10 +456,19 @@ func (s *Subscription) EndFrom(month time.Time) {
 	s.UpdatedAt = time.Now().UTC()
 }
 
-// IsActiveOn reports whether this subscription bills in the reference month
-// (i.e. it hasn't been canceled by then).
+// SetEffectiveFrom bounds this subscription to be visible only from `month` on.
+func (s *Subscription) SetEffectiveFrom(month time.Time) {
+	m := firstOfMonthUTC(month)
+	s.EffectiveFrom = &m
+	s.UpdatedAt = time.Now().UTC()
+}
+
+// IsActiveOn reports whether this subscription bills in the reference month:
+// it has become visible (EffectiveFrom) and hasn't been canceled by then.
 func (s *Subscription) IsActiveOn(reference time.Time) bool {
-	return s.CanceledFrom == nil || monthIndex(reference) < monthIndex(*s.CanceledFrom)
+	started := s.EffectiveFrom == nil || monthIndex(reference) >= monthIndex(*s.EffectiveFrom)
+	notCanceled := s.CanceledFrom == nil || monthIndex(reference) < monthIndex(*s.CanceledFrom)
+	return started && notCanceled
 }
 
 // MonthlyChargeAmount returns the amount this subscription contributes to the

@@ -35,6 +35,7 @@ type subscriptionDoc struct {
 	Domain        string          `bson:"domain,omitempty"`
 	CategoryID    *string         `bson:"category_id,omitempty"`
 	CanceledFrom  *time.Time      `bson:"canceled_from,omitempty"`
+	EffectiveFrom *time.Time      `bson:"effective_from,omitempty"`
 	Position      int             `bson:"position"`
 	CreatedAt     time.Time       `bson:"created_at"`
 	UpdatedAt     time.Time       `bson:"updated_at"`
@@ -53,6 +54,7 @@ func newSubscriptionDoc(s *domaincard.Subscription) (subscriptionDoc, error) {
 		Domain:        s.Domain,
 		CategoryID:    uuidPtrToString(s.CategoryID),
 		CanceledFrom:  s.CanceledFrom,
+		EffectiveFrom: s.EffectiveFrom,
 		Position:      s.Position,
 		CreatedAt:     s.CreatedAt,
 		UpdatedAt:     s.UpdatedAt,
@@ -84,6 +86,7 @@ func (d subscriptionDoc) toDomain() (*domaincard.Subscription, error) {
 		Domain:        d.Domain,
 		CategoryID:    categoryID,
 		CanceledFrom:  d.CanceledFrom,
+		EffectiveFrom: d.EffectiveFrom,
 		Position:      d.Position,
 		CreatedAt:     d.CreatedAt,
 		UpdatedAt:     d.UpdatedAt,

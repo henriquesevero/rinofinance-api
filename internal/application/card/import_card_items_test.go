@@ -86,6 +86,7 @@ func TestImportCardItems_CreatesPurchasesAndSubscriptions(t *testing.T) {
 		[]ImportSubscriptionInput{
 			{Name: "Netflix", MonthlyAmount: money(t, "72.80"), Domain: "netflix.com"},
 		},
+		time.Time{},
 	)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -106,7 +107,7 @@ func TestImportCardItems_RejectsForeignCard(t *testing.T) {
 	card := &domaincard.CreditCard{ID: uuid.New(), UserID: owner, Name: "Itaú"}
 	uc := NewImportCardItemsUseCase(&fakeCardRepo{card: card}, &fakePurchaseRepo{}, &fakeSubscriptionRepo{})
 
-	_, err := uc.Execute(context.Background(), uuid.New() /* different user */, card.ID, nil, nil)
+	_, err := uc.Execute(context.Background(), uuid.New() /* different user */, card.ID, nil, nil, time.Time{})
 	if err == nil {
 		t.Fatal("expected error for a card owned by another user")
 	}
@@ -123,7 +124,7 @@ func TestImportCardItems_AbortsBeforeWritingOnInvalidItem(t *testing.T) {
 		[]ImportInstallmentInput{
 			{Name: "Válida", InstallmentAmount: money(t, "10.00"), TotalInstallments: 3, FirstInstallmentDate: first},
 			{Name: "", InstallmentAmount: money(t, "10.00"), TotalInstallments: 3, FirstInstallmentDate: first}, // invalid: empty name
-		}, nil)
+		}, nil, time.Time{})
 	if err == nil {
 		t.Fatal("expected validation error for empty name")
 	}

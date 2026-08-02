@@ -65,10 +65,16 @@ func (uc *ImportCardItemsUseCase) Execute(
 	userID, cardID uuid.UUID,
 	installments []ImportInstallmentInput,
 	subscriptions []ImportSubscriptionInput,
+	referenceMonth time.Time,
 ) (ImportResult, error) {
 	if err := verifyCardOwnership(ctx, uc.cards, cardID, userID); err != nil {
 		return ImportResult{}, err
 	}
+
+	// Bound imported items to the fatura's month so a mid-way parcela (e.g.
+	// 2/3) shows only from the imported bill onward, never populating earlier
+	// months it was never tracked in.
+	effectiveFrom := referenceMonth
 
 	// Build (and validate) everything before writing anything.
 	builtPurchases := make([]*domaincard.InstallmentPurchase, 0, len(installments))
@@ -79,6 +85,9 @@ func (uc *ImportCardItemsUseCase) Execute(
 		}
 		p.SetDomain(in.Domain)
 		p.SetCategory(in.CategoryID)
+		if !effectiveFrom.IsZero() {
+			p.SetEffectiveFrom(effectiveFrom)
+		}
 		builtPurchases = append(builtPurchases, p)
 	}
 
@@ -90,6 +99,9 @@ func (uc *ImportCardItemsUseCase) Execute(
 		}
 		s.SetDomain(in.Domain)
 		s.SetCategory(in.CategoryID)
+		if !effectiveFrom.IsZero() {
+			s.SetEffectiveFrom(effectiveFrom)
+		}
 		builtSubscriptions = append(builtSubscriptions, s)
 	}
 
