@@ -34,6 +34,7 @@ func EnsureIndexes(ctx context.Context, db *mongo.Database) error {
 		installmentPurchasesCollection: {userScoped("card_id")},
 		subscriptionsCollection:        {userScoped("card_id")},
 		investmentAssetsCollection:     {userScoped("user_id")},
+		investmentProventosCollection:  {userScoped("user_id"), userScoped("asset_id")},
 		categoriesCollection:           {userScoped("user_id")},
 		accountsCollection:             {userScoped("user_id")},
 		accountPurchasesCollection:     {userScoped("account_id")},

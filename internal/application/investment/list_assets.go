@@ -10,22 +10,42 @@ import (
 	"rinofinance-api/internal/domain/shared"
 )
 
-// ListAssetsUseCase lists every investment/patrimony asset belonging to a
-// user, along with the total patrimony card shown in Aba 3.
+// PortfolioOverview is everything Aba 3 needs in one round trip: the assets,
+// their proventos, and the portfolio totals.
+type PortfolioOverview struct {
+	Assets         []*domaininvestment.Asset
+	Proventos      []*domaininvestment.Provento
+	TotalPatrimony shared.Money
+	TotalInvested  shared.Money
+	TotalProventos shared.Money
+}
+
+// ListAssetsUseCase builds the portfolio overview for a user.
 type ListAssetsUseCase struct {
-	repo domaininvestment.Repository
+	assets    domaininvestment.Repository
+	proventos domaininvestment.ProventoRepository
 }
 
 // NewListAssetsUseCase wires the dependencies for ListAssetsUseCase.
-func NewListAssetsUseCase(repo domaininvestment.Repository) *ListAssetsUseCase {
-	return &ListAssetsUseCase{repo: repo}
+func NewListAssetsUseCase(assets domaininvestment.Repository, proventos domaininvestment.ProventoRepository) *ListAssetsUseCase {
+	return &ListAssetsUseCase{assets: assets, proventos: proventos}
 }
 
-// Execute returns all assets for userID plus their combined total balance.
-func (uc *ListAssetsUseCase) Execute(ctx context.Context, userID uuid.UUID) ([]*domaininvestment.Asset, shared.Money, error) {
-	assets, err := uc.repo.ListByUser(ctx, userID)
+// Execute returns the user's assets, proventos and portfolio totals.
+func (uc *ListAssetsUseCase) Execute(ctx context.Context, userID uuid.UUID) (PortfolioOverview, error) {
+	assets, err := uc.assets.ListByUser(ctx, userID)
 	if err != nil {
-		return nil, shared.Zero, fmt.Errorf("erro ao listar ativos: %w", err)
+		return PortfolioOverview{}, fmt.Errorf("erro ao listar ativos: %w", err)
 	}
-	return assets, domaininvestment.TotalPatrimony(assets), nil
+	proventos, err := uc.proventos.ListByUser(ctx, userID)
+	if err != nil {
+		return PortfolioOverview{}, fmt.Errorf("erro ao listar proventos: %w", err)
+	}
+	return PortfolioOverview{
+		Assets:         assets,
+		Proventos:      proventos,
+		TotalPatrimony: domaininvestment.TotalPatrimony(assets),
+		TotalInvested:  domaininvestment.TotalInvested(assets),
+		TotalProventos: domaininvestment.TotalProventos(proventos),
+	}, nil
 }

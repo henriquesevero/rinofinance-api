@@ -9,13 +9,15 @@ import (
 )
 
 // InvestmentHandler exposes CRUD endpoints for Aba 3's investment/
-// patrimony assets.
+// patrimony assets and their proventos.
 type InvestmentHandler struct {
-	create *appinvestment.CreateAssetUseCase
-	update *appinvestment.UpdateAssetUseCase
-	toggle *appinvestment.ToggleAssetUseCase
-	delete *appinvestment.DeleteAssetUseCase
-	list   *appinvestment.ListAssetsUseCase
+	create         *appinvestment.CreateAssetUseCase
+	update         *appinvestment.UpdateAssetUseCase
+	toggle         *appinvestment.ToggleAssetUseCase
+	delete         *appinvestment.DeleteAssetUseCase
+	list           *appinvestment.ListAssetsUseCase
+	createProvento *appinvestment.CreateProventoUseCase
+	deleteProvento *appinvestment.DeleteProventoUseCase
 }
 
 // NewInvestmentHandler wires the dependencies for InvestmentHandler.
@@ -25,8 +27,18 @@ func NewInvestmentHandler(
 	toggle *appinvestment.ToggleAssetUseCase,
 	delete *appinvestment.DeleteAssetUseCase,
 	list *appinvestment.ListAssetsUseCase,
+	createProvento *appinvestment.CreateProventoUseCase,
+	deleteProvento *appinvestment.DeleteProventoUseCase,
 ) *InvestmentHandler {
-	return &InvestmentHandler{create: create, update: update, toggle: toggle, delete: delete, list: list}
+	return &InvestmentHandler{
+		create:         create,
+		update:         update,
+		toggle:         toggle,
+		delete:         delete,
+		list:           list,
+		createProvento: createProvento,
+		deleteProvento: deleteProvento,
+	}
 }
 
 // List handles GET /api/investments.
@@ -36,12 +48,12 @@ func (h *InvestmentHandler) List(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	assets, total, err := h.list.Execute(r.Context(), userID)
+	overview, err := h.list.Execute(r.Context(), userID)
 	if err != nil {
 		writeError(w, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, dto.NewAssetsOverviewResponse(assets, total))
+	writeJSON(w, http.StatusOK, dto.NewAssetsOverviewResponse(overview))
 }
 
 // Create handles POST /api/investments.
@@ -57,7 +69,7 @@ func (h *InvestmentHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	a, err := h.create.Execute(r.Context(), userID, req.Name, req.CurrentBalance)
+	a, err := h.create.Execute(r.Context(), userID, req.ToInput())
 	if err != nil {
 		writeError(w, err)
 		return
@@ -82,7 +94,7 @@ func (h *InvestmentHandler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	a, err := h.update.Execute(r.Context(), userID, assetID, req.Name, req.CurrentBalance)
+	a, err := h.update.Execute(r.Context(), userID, assetID, req.ToInput())
 	if err != nil {
 		writeError(w, err)
 		return
@@ -121,6 +133,45 @@ func (h *InvestmentHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.delete.Execute(r.Context(), userID, assetID); err != nil {
+		writeError(w, err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
+// CreateProvento handles POST /api/investments/proventos.
+func (h *InvestmentHandler) CreateProvento(w http.ResponseWriter, r *http.Request) {
+	userID, ok := requireUserID(w, r)
+	if !ok {
+		return
+	}
+
+	var req dto.ProventoRequest
+	if err := decodeJSON(r, &req); err != nil {
+		writeError(w, err)
+		return
+	}
+
+	p, err := h.createProvento.Execute(r.Context(), userID, req.AssetID, req.Amount, req.Date)
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusCreated, dto.NewProventoResponse(p))
+}
+
+// DeleteProvento handles DELETE /api/investments/proventos/{id}.
+func (h *InvestmentHandler) DeleteProvento(w http.ResponseWriter, r *http.Request) {
+	userID, ok := requireUserID(w, r)
+	if !ok {
+		return
+	}
+	proventoID, ok := parseUUIDPathValue(w, r, "id")
+	if !ok {
+		return
+	}
+
+	if err := h.deleteProvento.Execute(r.Context(), userID, proventoID); err != nil {
 		writeError(w, err)
 		return
 	}

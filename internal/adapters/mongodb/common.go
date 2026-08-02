@@ -42,6 +42,7 @@ const (
 	installmentPurchasesCollection = "installment_purchases"
 	subscriptionsCollection        = "subscriptions"
 	investmentAssetsCollection     = "investment_assets"
+	investmentProventosCollection  = "investment_proventos"
 	categoriesCollection           = "categories"
 	accountsCollection             = "accounts"
 	accountPurchasesCollection     = "account_purchases"

@@ -93,6 +93,8 @@ func NewRouter(h Handlers, tokens *auth.TokenIssuer, resolveOwner func(uuid.UUID
 
 	protected.HandleFunc("GET /api/investments", h.Investment.List)
 	protected.HandleFunc("POST /api/investments", h.Investment.Create)
+	protected.HandleFunc("POST /api/investments/proventos", h.Investment.CreateProvento)
+	protected.HandleFunc("DELETE /api/investments/proventos/{id}", h.Investment.DeleteProvento)
 	protected.HandleFunc("PUT /api/investments/{id}", h.Investment.Update)
 	protected.HandleFunc("PATCH /api/investments/{id}/toggle", h.Investment.Toggle)
 	protected.HandleFunc("DELETE /api/investments/{id}", h.Investment.Delete)

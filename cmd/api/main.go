@@ -66,6 +66,7 @@ func main() {
 	installmentRepo := mongodb.NewInstallmentPurchaseRepository(db)
 	subscriptionRepo := mongodb.NewSubscriptionRepository(db)
 	investmentRepo := mongodb.NewInvestmentRepository(db)
+	proventoRepo := mongodb.NewProventoRepository(db)
 	categoryRepo := mongodb.NewCategoryRepository(db)
 	accountRepo := mongodb.NewAccountRepository(db)
 	accountPurchaseRepo := mongodb.NewAccountPurchaseRepository(db)
@@ -156,8 +157,10 @@ func main() {
 	createAsset := appinvestment.NewCreateAssetUseCase(investmentRepo)
 	updateAsset := appinvestment.NewUpdateAssetUseCase(investmentRepo)
 	toggleAsset := appinvestment.NewToggleAssetUseCase(investmentRepo)
-	deleteAsset := appinvestment.NewDeleteAssetUseCase(investmentRepo)
-	listAssets := appinvestment.NewListAssetsUseCase(investmentRepo)
+	deleteAsset := appinvestment.NewDeleteAssetUseCase(investmentRepo, proventoRepo)
+	listAssets := appinvestment.NewListAssetsUseCase(investmentRepo, proventoRepo)
+	createProvento := appinvestment.NewCreateProventoUseCase(investmentRepo, proventoRepo)
+	deleteProvento := appinvestment.NewDeleteProventoUseCase(proventoRepo)
 
 	wishlistService := appwishlist.NewService(wishlistSectionRepo, wishlistItemRepo)
 
@@ -181,7 +184,7 @@ func main() {
 			createSubscription, updateSubscription, deleteSubscription, importCardItems, clearCardItems,
 			reorderCards, reorderInstallmentPurchases, reorderSubscriptions,
 		),
-		Investment: handler.NewInvestmentHandler(createAsset, updateAsset, toggleAsset, deleteAsset, listAssets),
+		Investment: handler.NewInvestmentHandler(createAsset, updateAsset, toggleAsset, deleteAsset, listAssets, createProvento, deleteProvento),
 		Category:   handler.NewCategoryHandler(createCategory, updateCategory, deleteCategory, listCategories, reorderCategories),
 		Wishlist:   handler.NewWishlistHandler(wishlistService),
 		Wallet: handler.NewWalletHandler(
