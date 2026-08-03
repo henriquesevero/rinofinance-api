@@ -8,7 +8,6 @@ import (
 	"rinofinance-api/internal/adapters/http/dto"
 )
 
-// IncomeHandler exposes CRUD and toggle endpoints for Aba 1's "Entradas".
 type IncomeHandler struct {
 	create            *appincome.CreateIncomeUseCase
 	createAccountLink *appincome.CreateAccountLinkedIncomeUseCase
@@ -20,7 +19,6 @@ type IncomeHandler struct {
 	reorder           *appincome.ReorderIncomesUseCase
 }
 
-// NewIncomeHandler wires the dependencies for IncomeHandler.
 func NewIncomeHandler(
 	create *appincome.CreateIncomeUseCase,
 	createAccountLink *appincome.CreateAccountLinkedIncomeUseCase,
@@ -43,7 +41,6 @@ func NewIncomeHandler(
 	}
 }
 
-// CreateAccountLinked handles POST /api/incomes/account-linked.
 func (h *IncomeHandler) CreateAccountLinked(w http.ResponseWriter, r *http.Request) {
 	userID, ok := requireUserID(w, r)
 	if !ok {
@@ -67,7 +64,6 @@ func (h *IncomeHandler) CreateAccountLinked(w http.ResponseWriter, r *http.Reque
 	writeJSON(w, http.StatusCreated, dto.NewIncomeResponse(inc))
 }
 
-// Reorder handles PUT /api/incomes/order.
 func (h *IncomeHandler) Reorder(w http.ResponseWriter, r *http.Request) {
 	userID, ok := requireUserID(w, r)
 	if !ok {
@@ -90,7 +86,6 @@ func (h *IncomeHandler) Reorder(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-// List handles GET /api/incomes.
 func (h *IncomeHandler) List(w http.ResponseWriter, r *http.Request) {
 	userID, ok := requireUserID(w, r)
 	if !ok {
@@ -105,7 +100,6 @@ func (h *IncomeHandler) List(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, dto.NewIncomeResponseList(incomes))
 }
 
-// Create handles POST /api/incomes.
 func (h *IncomeHandler) Create(w http.ResponseWriter, r *http.Request) {
 	userID, ok := requireUserID(w, r)
 	if !ok {
@@ -131,7 +125,6 @@ func (h *IncomeHandler) Create(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusCreated, dto.NewIncomeResponse(inc))
 }
 
-// Update handles PUT /api/incomes/{id}.
 func (h *IncomeHandler) Update(w http.ResponseWriter, r *http.Request) {
 	userID, ok := requireUserID(w, r)
 	if !ok {
@@ -161,7 +154,6 @@ func (h *IncomeHandler) Update(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, dto.NewIncomeResponse(inc))
 }
 
-// Toggle handles PATCH /api/incomes/{id}/toggle.
 func (h *IncomeHandler) Toggle(w http.ResponseWriter, r *http.Request) {
 	userID, ok := requireUserID(w, r)
 	if !ok {
@@ -180,7 +172,6 @@ func (h *IncomeHandler) Toggle(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, dto.NewIncomeResponse(inc))
 }
 
-// ToggleReceived handles PATCH /api/incomes/{id}/received.
 func (h *IncomeHandler) ToggleReceived(w http.ResponseWriter, r *http.Request) {
 	userID, ok := requireUserID(w, r)
 	if !ok {
@@ -204,7 +195,6 @@ func (h *IncomeHandler) ToggleReceived(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, dto.NewIncomeResponse(inc))
 }
 
-// Delete handles DELETE /api/incomes/{id}.
 func (h *IncomeHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	userID, ok := requireUserID(w, r)
 	if !ok {

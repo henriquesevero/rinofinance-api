@@ -11,9 +11,6 @@ import (
 	"rinofinance-api/internal/domain/shared"
 )
 
-// CreateAccountLinkedExpenseUseCase creates an expense whose amount mirrors
-// an account's current-month debit purchases total (the "Compras Débito"
-// rule, analogous to the card-linked expense).
 type CreateAccountLinkedExpenseUseCase struct {
 	expenses domainexpense.Repository
 	accounts domainaccount.Repository
@@ -23,7 +20,6 @@ func NewCreateAccountLinkedExpenseUseCase(expenses domainexpense.Repository, acc
 	return &CreateAccountLinkedExpenseUseCase{expenses: expenses, accounts: accounts}
 }
 
-// Execute verifies the account belongs to the user before linking.
 func (uc *CreateAccountLinkedExpenseUseCase) Execute(ctx context.Context, userID, accountID uuid.UUID, name string, categoryID *uuid.UUID) (*domainexpense.Expense, error) {
 	account, err := uc.accounts.FindByID(ctx, accountID)
 	if err != nil {

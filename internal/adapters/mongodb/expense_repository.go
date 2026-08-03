@@ -15,12 +15,10 @@ import (
 	"rinofinance-api/internal/domain/shared"
 )
 
-// ExpenseRepository implements domain/expense.Repository against MongoDB.
 type ExpenseRepository struct {
 	collection *mongo.Collection
 }
 
-// NewExpenseRepository wires an ExpenseRepository to a database handle.
 func NewExpenseRepository(db *mongo.Database) *ExpenseRepository {
 	return &ExpenseRepository{collection: db.Collection(expensesCollection)}
 }
@@ -113,7 +111,6 @@ func (d expenseDoc) toDomain() (*domainexpense.Expense, error) {
 	}, nil
 }
 
-// Create inserts a new expense document (standalone or card-linked).
 func (r *ExpenseRepository) Create(ctx context.Context, e *domainexpense.Expense) error {
 	doc, err := newExpenseDoc(e)
 	if err != nil {
@@ -125,7 +122,6 @@ func (r *ExpenseRepository) Create(ctx context.Context, e *domainexpense.Expense
 	return nil
 }
 
-// FindByID fetches an expense by ID.
 func (r *ExpenseRepository) FindByID(ctx context.Context, id uuid.UUID) (*domainexpense.Expense, error) {
 	var doc expenseDoc
 	if err := r.collection.FindOne(ctx, bson.M{"_id": id.String()}).Decode(&doc); err != nil {
@@ -137,12 +133,10 @@ func (r *ExpenseRepository) FindByID(ctx context.Context, id uuid.UUID) (*domain
 	return doc.toDomain()
 }
 
-// ListByUser fetches every expense belonging to userID.
 func (r *ExpenseRepository) ListByUser(ctx context.Context, userID uuid.UUID) ([]*domainexpense.Expense, error) {
 	return r.list(ctx, bson.M{"user_id": userID.String()})
 }
 
-// FindByCardID fetches every expense linked to a given credit card.
 func (r *ExpenseRepository) FindByCardID(ctx context.Context, cardID uuid.UUID) ([]*domainexpense.Expense, error) {
 	return r.list(ctx, bson.M{"card_id": cardID.String()})
 }
@@ -170,10 +164,6 @@ func (r *ExpenseRepository) list(ctx context.Context, filter bson.M) ([]*domaine
 	return expenses, nil
 }
 
-// Update persists changes to name, amount, active flag and card linkage.
-// ReplaceOne swaps the entire document, so a nil CardID (omitted by the
-// `omitempty` tag) correctly drops any previously stored card_id instead
-// of leaving it stale.
 func (r *ExpenseRepository) Update(ctx context.Context, e *domainexpense.Expense) error {
 	doc, err := newExpenseDoc(e)
 	if err != nil {
@@ -186,7 +176,6 @@ func (r *ExpenseRepository) Update(ctx context.Context, e *domainexpense.Expense
 	return checkMatchedCount(res)
 }
 
-// Delete permanently removes an expense document.
 func (r *ExpenseRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	res, err := r.collection.DeleteOne(ctx, bson.M{"_id": id.String()})
 	if err != nil {

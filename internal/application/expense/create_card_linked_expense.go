@@ -11,22 +11,15 @@ import (
 	"rinofinance-api/internal/domain/shared"
 )
 
-// CreateCardLinkedExpenseUseCase creates an expense whose amount is
-// derived from a credit card's monthly total, implementing the "Vínculo
-// com Cartões" rule.
 type CreateCardLinkedExpenseUseCase struct {
 	expenses domainexpense.Repository
 	cards    domaincard.CardRepository
 }
 
-// NewCreateCardLinkedExpenseUseCase wires the dependencies for
-// CreateCardLinkedExpenseUseCase.
 func NewCreateCardLinkedExpenseUseCase(expenses domainexpense.Repository, cards domaincard.CardRepository) *CreateCardLinkedExpenseUseCase {
 	return &CreateCardLinkedExpenseUseCase{expenses: expenses, cards: cards}
 }
 
-// Execute verifies the target card belongs to userID before linking, so a
-// user can never attach an expense to another account's card.
 func (uc *CreateCardLinkedExpenseUseCase) Execute(ctx context.Context, userID, cardID uuid.UUID, name string, categoryID *uuid.UUID) (*domainexpense.Expense, error) {
 	c, err := uc.cards.FindByID(ctx, cardID)
 	if err != nil {

@@ -6,7 +6,6 @@ import (
 	"github.com/google/uuid"
 )
 
-// Repository is the output port for persisting Category entities.
 type Repository interface {
 	Create(ctx context.Context, c *Category) error
 	FindByID(ctx context.Context, id uuid.UUID) (*Category, error)

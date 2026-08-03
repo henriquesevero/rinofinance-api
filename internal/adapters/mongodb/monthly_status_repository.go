@@ -14,14 +14,10 @@ import (
 	"rinofinance-api/internal/domain/monthlystatus"
 )
 
-// MonthlyStatusRepository implements domain/monthlystatus.Repository against
-// MongoDB. Each (itemType, itemID, month) has exactly one document, keyed by
-// a deterministic _id so Set is a simple idempotent upsert.
 type MonthlyStatusRepository struct {
 	collection *mongo.Collection
 }
 
-// NewMonthlyStatusRepository wires the repository to a database handle.
 func NewMonthlyStatusRepository(db *mongo.Database) *MonthlyStatusRepository {
 	return &MonthlyStatusRepository{collection: db.Collection(monthlyStatusCollection)}
 }
@@ -40,7 +36,6 @@ func statusDocID(itemType monthlystatus.ItemType, itemID uuid.UUID, month string
 	return fmt.Sprintf("%s:%s:%s", itemType, itemID.String(), month)
 }
 
-// ByMonth returns itemID -> done for the user's items of a type in a month.
 func (r *MonthlyStatusRepository) ByMonth(ctx context.Context, userID uuid.UUID, itemType monthlystatus.ItemType, month string) (map[uuid.UUID]bool, error) {
 	filter := bson.M{"user_id": userID.String(), "item_type": string(itemType), "month": month}
 	cursor, err := r.collection.Find(ctx, filter)
@@ -62,7 +57,6 @@ func (r *MonthlyStatusRepository) ByMonth(ctx context.Context, userID uuid.UUID,
 	return out, nil
 }
 
-// Get returns the done value for one item in a month (false when unset).
 func (r *MonthlyStatusRepository) Get(ctx context.Context, userID uuid.UUID, itemType monthlystatus.ItemType, itemID uuid.UUID, month string) (bool, error) {
 	var doc monthlyStatusDoc
 	if err := r.collection.FindOne(ctx, bson.M{"_id": statusDocID(itemType, itemID, month)}).Decode(&doc); err != nil {
@@ -74,7 +68,6 @@ func (r *MonthlyStatusRepository) Get(ctx context.Context, userID uuid.UUID, ite
 	return doc.Done, nil
 }
 
-// Set upserts one item's done value for a month.
 func (r *MonthlyStatusRepository) Set(ctx context.Context, userID uuid.UUID, itemType monthlystatus.ItemType, itemID uuid.UUID, month string, done bool) error {
 	doc := monthlyStatusDoc{
 		ID:        statusDocID(itemType, itemID, month),

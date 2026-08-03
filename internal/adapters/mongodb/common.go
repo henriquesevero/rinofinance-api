@@ -11,8 +11,6 @@ import (
 	"rinofinance-api/internal/domain/shared"
 )
 
-// uuidPtrToString renders an optional UUID as an optional string for BSON
-// storage (nil stays nil, so omitempty drops the field entirely).
 func uuidPtrToString(id *uuid.UUID) *string {
 	if id == nil {
 		return nil
@@ -21,8 +19,14 @@ func uuidPtrToString(id *uuid.UUID) *string {
 	return &s
 }
 
-// stringPtrToUUID parses an optional stored string back into an optional
-// UUID (nil stays nil).
+func stringIDs(ids []uuid.UUID) []string {
+	out := make([]string, len(ids))
+	for i, id := range ids {
+		out[i] = id.String()
+	}
+	return out
+}
+
 func stringPtrToUUID(s *string, field string) (*uuid.UUID, error) {
 	if s == nil {
 		return nil, nil
@@ -51,9 +55,6 @@ const (
 	wishlistItemsCollection        = "wishlist_items"
 )
 
-// toDecimal128 converts a domain Money value into the BSON Decimal128 used
-// to store every monetary field, going through a decimal string so no
-// binary floating point rounding is ever introduced.
 func toDecimal128(m shared.Money) (bson.Decimal128, error) {
 	d, err := bson.ParseDecimal128(m.Decimal().String())
 	if err != nil {
@@ -62,7 +63,6 @@ func toDecimal128(m shared.Money) (bson.Decimal128, error) {
 	return d, nil
 }
 
-// fromDecimal128 converts a stored Decimal128 back into a domain Money.
 func fromDecimal128(d bson.Decimal128) (shared.Money, error) {
 	dec, err := decimal.NewFromString(d.String())
 	if err != nil {
@@ -71,9 +71,6 @@ func fromDecimal128(d bson.Decimal128) (shared.Money, error) {
 	return shared.NewMoneyFromDecimal(dec), nil
 }
 
-// checkMatchedCount returns shared.ErrNotFound if an update matched no
-// document, so use cases can distinguish "nothing to update" from a
-// driver error — the Mongo equivalent of checking SQL rows affected.
 func checkMatchedCount(res *mongo.UpdateResult) error {
 	if res.MatchedCount == 0 {
 		return shared.ErrNotFound
@@ -81,8 +78,6 @@ func checkMatchedCount(res *mongo.UpdateResult) error {
 	return nil
 }
 
-// checkDeletedCount returns shared.ErrNotFound if a delete matched no
-// document.
 func checkDeletedCount(res *mongo.DeleteResult) error {
 	if res.DeletedCount == 0 {
 		return shared.ErrNotFound

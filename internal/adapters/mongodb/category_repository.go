@@ -15,12 +15,10 @@ import (
 	"rinofinance-api/internal/domain/shared"
 )
 
-// CategoryRepository implements domain/category.Repository against MongoDB.
 type CategoryRepository struct {
 	collection *mongo.Collection
 }
 
-// NewCategoryRepository wires a CategoryRepository to a database handle.
 func NewCategoryRepository(db *mongo.Database) *CategoryRepository {
 	return &CategoryRepository{collection: db.Collection(categoriesCollection)}
 }
@@ -70,7 +68,6 @@ func (d categoryDoc) toDomain() (*domaincategory.Category, error) {
 	}, nil
 }
 
-// Create inserts a new category document.
 func (r *CategoryRepository) Create(ctx context.Context, c *domaincategory.Category) error {
 	if _, err := r.collection.InsertOne(ctx, newCategoryDoc(c)); err != nil {
 		return fmt.Errorf("erro ao inserir categoria: %w", err)
@@ -78,7 +75,6 @@ func (r *CategoryRepository) Create(ctx context.Context, c *domaincategory.Categ
 	return nil
 }
 
-// FindByID fetches a category by ID.
 func (r *CategoryRepository) FindByID(ctx context.Context, id uuid.UUID) (*domaincategory.Category, error) {
 	var doc categoryDoc
 	if err := r.collection.FindOne(ctx, bson.M{"_id": id.String()}).Decode(&doc); err != nil {
@@ -90,8 +86,6 @@ func (r *CategoryRepository) FindByID(ctx context.Context, id uuid.UUID) (*domai
 	return doc.toDomain()
 }
 
-// ListByUser fetches every category belonging to userID, ordered by the
-// user's manual position (with name as a stable tiebreaker).
 func (r *CategoryRepository) ListByUser(ctx context.Context, userID uuid.UUID) ([]*domaincategory.Category, error) {
 	opts := options.Find().SetSort(bson.D{{Key: "position", Value: 1}, {Key: "name", Value: 1}})
 	cursor, err := r.collection.Find(ctx, bson.M{"user_id": userID.String()}, opts)
@@ -115,7 +109,6 @@ func (r *CategoryRepository) ListByUser(ctx context.Context, userID uuid.UUID) (
 	return categories, nil
 }
 
-// Update persists changes to a category.
 func (r *CategoryRepository) Update(ctx context.Context, c *domaincategory.Category) error {
 	res, err := r.collection.ReplaceOne(ctx, bson.M{"_id": c.ID.String()}, newCategoryDoc(c))
 	if err != nil {
@@ -124,7 +117,6 @@ func (r *CategoryRepository) Update(ctx context.Context, c *domaincategory.Categ
 	return checkMatchedCount(res)
 }
 
-// Delete permanently removes a category document.
 func (r *CategoryRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	res, err := r.collection.DeleteOne(ctx, bson.M{"_id": id.String()})
 	if err != nil {

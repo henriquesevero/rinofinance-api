@@ -9,21 +9,14 @@ import (
 	domainexpense "rinofinance-api/internal/domain/expense"
 )
 
-// ReorderExpensesUseCase persists a new manual ordering of a user's
-// expense lines.
 type ReorderExpensesUseCase struct {
 	repo domainexpense.Repository
 }
 
-// NewReorderExpensesUseCase wires the dependencies for
-// ReorderExpensesUseCase.
 func NewReorderExpensesUseCase(repo domainexpense.Repository) *ReorderExpensesUseCase {
 	return &ReorderExpensesUseCase{repo: repo}
 }
 
-// Execute assigns each expense the position of its index in orderedIDs.
-// Only expenses owned by the user are touched; unknown/foreign IDs are
-// ignored.
 func (uc *ReorderExpensesUseCase) Execute(ctx context.Context, userID uuid.UUID, orderedIDs []uuid.UUID) error {
 	owned, err := uc.repo.ListByUser(ctx, userID)
 	if err != nil {

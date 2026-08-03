@@ -1,6 +1,3 @@
-// Package handler implements the primary (driving) HTTP adapter: one
-// handler per resource, translating requests into application-layer use
-// case calls and domain errors into HTTP status codes.
 package handler
 
 import (
@@ -17,8 +14,6 @@ import (
 	"rinofinance-api/internal/pkg/auth"
 )
 
-// writeJSON encodes payload as the JSON response body with the given
-// status code.
 func writeJSON(w http.ResponseWriter, status int, payload interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
@@ -27,8 +22,6 @@ func writeJSON(w http.ResponseWriter, status int, payload interface{}) {
 	}
 }
 
-// decodeJSON parses the request body into dst, returning a 400-mappable
-// error on malformed JSON.
 func decodeJSON(r *http.Request, dst interface{}) error {
 	if err := json.NewDecoder(r.Body).Decode(dst); err != nil {
 		return errBadRequest
@@ -36,13 +29,8 @@ func decodeJSON(r *http.Request, dst interface{}) error {
 	return nil
 }
 
-// errBadRequest marks a request body that failed to parse as JSON.
 var errBadRequest = errors.New("corpo da requisição inválido")
 
-// writeError maps a domain/application error to the appropriate HTTP
-// status and writes it as {"error": "..."}. Unexpected (unmapped) errors
-// are logged server-side and returned as a generic 500 so internal detail
-// is never leaked to the client.
 func writeError(w http.ResponseWriter, err error) {
 	status := statusForError(err)
 	if status == http.StatusInternalServerError {

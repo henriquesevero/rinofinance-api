@@ -9,19 +9,14 @@ import (
 	domaincard "rinofinance-api/internal/domain/card"
 )
 
-// ReorderCardsUseCase persists a new manual ordering of a user's cards.
 type ReorderCardsUseCase struct {
 	repo domaincard.CardRepository
 }
 
-// NewReorderCardsUseCase wires the dependencies for ReorderCardsUseCase.
 func NewReorderCardsUseCase(repo domaincard.CardRepository) *ReorderCardsUseCase {
 	return &ReorderCardsUseCase{repo: repo}
 }
 
-// Execute assigns each card the position of its index in orderedIDs. Only
-// cards owned by the user are touched; unknown or foreign IDs are ignored
-// so a stale client list can't reorder someone else's cards.
 func (uc *ReorderCardsUseCase) Execute(ctx context.Context, userID uuid.UUID, orderedIDs []uuid.UUID) error {
 	owned, err := uc.repo.ListByUser(ctx, userID)
 	if err != nil {

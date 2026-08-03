@@ -13,21 +13,15 @@ import (
 	domainuser "rinofinance-api/internal/domain/user"
 )
 
-// ChangeEmailUseCase updates the account's login email. It requires the
-// current password so a hijacked session token alone can't redirect
-// account recovery to an attacker-controlled address.
 type ChangeEmailUseCase struct {
 	users  domainuser.Repository
 	hasher appauth.PasswordHasher
 }
 
-// NewChangeEmailUseCase wires the dependencies for ChangeEmailUseCase.
 func NewChangeEmailUseCase(users domainuser.Repository, hasher appauth.PasswordHasher) *ChangeEmailUseCase {
 	return &ChangeEmailUseCase{users: users, hasher: hasher}
 }
 
-// Execute verifies currentPassword, ensures newEmail isn't already taken
-// by another account, then updates it.
 func (uc *ChangeEmailUseCase) Execute(ctx context.Context, userID uuid.UUID, newEmail, currentPassword string) (*domainuser.User, error) {
 	u, err := uc.users.FindByID(ctx, userID)
 	if err != nil {

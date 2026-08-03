@@ -11,9 +11,6 @@ import (
 	"rinofinance-api/internal/domain/shared"
 )
 
-// Richer fakes that support lookup + delete, needed to exercise the clear
-// use case (the import-test fakes are write-only).
-
 type lookupPurchaseRepo struct {
 	items   map[uuid.UUID]*domaincard.InstallmentPurchase
 	deleted []uuid.UUID
@@ -29,6 +26,9 @@ func (r *lookupPurchaseRepo) FindByID(_ context.Context, id uuid.UUID) (*domainc
 	return nil, shared.ErrNotFound
 }
 func (r *lookupPurchaseRepo) ListByCard(context.Context, uuid.UUID) ([]*domaincard.InstallmentPurchase, error) {
+	return nil, nil
+}
+func (r *lookupPurchaseRepo) ListByCards(context.Context, []uuid.UUID) ([]*domaincard.InstallmentPurchase, error) {
 	return nil, nil
 }
 func (r *lookupPurchaseRepo) Update(context.Context, *domaincard.InstallmentPurchase) error {
@@ -55,6 +55,9 @@ func (r *lookupSubscriptionRepo) FindByID(_ context.Context, id uuid.UUID) (*dom
 func (r *lookupSubscriptionRepo) ListByCard(context.Context, uuid.UUID) ([]*domaincard.Subscription, error) {
 	return nil, nil
 }
+func (r *lookupSubscriptionRepo) ListByCards(context.Context, []uuid.UUID) ([]*domaincard.Subscription, error) {
+	return nil, nil
+}
 func (r *lookupSubscriptionRepo) Update(context.Context, *domaincard.Subscription) error { return nil }
 func (r *lookupSubscriptionRepo) Delete(_ context.Context, id uuid.UUID) error {
 	r.deleted = append(r.deleted, id)
@@ -79,7 +82,7 @@ func TestClearCardItems_DeletesSelectedOwnItems(t *testing.T) {
 
 	result, err := uc.Execute(
 		context.Background(), userID, card.ID,
-		[]uuid.UUID{p1.ID, otherCardPurchase.ID, uuid.New() /* nonexistent */},
+		[]uuid.UUID{p1.ID, otherCardPurchase.ID, uuid.New()},
 		[]uuid.UUID{s1.ID},
 		ClearModeDelete, time.Now().UTC(),
 	)
@@ -92,7 +95,7 @@ func TestClearCardItems_DeletesSelectedOwnItems(t *testing.T) {
 	if result.Subscriptions != 1 {
 		t.Errorf("deleted %d subscriptions, want 1", result.Subscriptions)
 	}
-	// The other-card purchase must survive.
+
 	if _, ok := purchases.items[otherCardPurchase.ID]; !ok {
 		t.Error("a purchase from another card was wrongly deleted")
 	}

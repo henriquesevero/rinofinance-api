@@ -1,5 +1,3 @@
-// Package category orchestrates CRUD use cases for user-defined spending
-// categories.
 package category
 
 import (
@@ -12,7 +10,6 @@ import (
 	"rinofinance-api/internal/domain/shared"
 )
 
-// CreateCategoryUseCase creates a new category for a user.
 type CreateCategoryUseCase struct {
 	repo domaincategory.Repository
 }
@@ -39,8 +36,6 @@ func (uc *CreateCategoryUseCase) Execute(ctx context.Context, userID uuid.UUID, 
 	return c, nil
 }
 
-// ReorderCategoriesUseCase persists a new manual ordering of a user's
-// categories.
 type ReorderCategoriesUseCase struct {
 	repo domaincategory.Repository
 }
@@ -76,7 +71,6 @@ func (uc *ReorderCategoriesUseCase) Execute(ctx context.Context, userID uuid.UUI
 	return nil
 }
 
-// UpdateCategoryUseCase renames/recolors an existing category.
 type UpdateCategoryUseCase struct {
 	repo domaincategory.Repository
 }
@@ -104,9 +98,6 @@ func (uc *UpdateCategoryUseCase) Execute(ctx context.Context, userID, categoryID
 	return c, nil
 }
 
-// DeleteCategoryUseCase removes a category. Items referencing a deleted
-// category simply fall back to "sem categoria" in the UI, so there's no
-// cascade to the item repositories.
 type DeleteCategoryUseCase struct {
 	repo domaincategory.Repository
 }
@@ -129,7 +120,6 @@ func (uc *DeleteCategoryUseCase) Execute(ctx context.Context, userID, categoryID
 	return nil
 }
 
-// ListCategoriesUseCase lists every category belonging to a user.
 type ListCategoriesUseCase struct {
 	repo domaincategory.Repository
 }

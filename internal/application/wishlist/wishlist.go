@@ -1,5 +1,3 @@
-// Package wishlist orchestrates the "itens para comprar" use cases: managing
-// sections and the items (products) inside them, plus the overview total.
 package wishlist
 
 import (
@@ -8,31 +6,25 @@ import (
 
 	"github.com/google/uuid"
 
-	domainwishlist "rinofinance-api/internal/domain/wishlist"
 	"rinofinance-api/internal/domain/shared"
+	domainwishlist "rinofinance-api/internal/domain/wishlist"
 )
 
-// Overview is the full wishlist payload: sections, items and their combined
-// value.
 type Overview struct {
 	Sections []*domainwishlist.Section
 	Items    []*domainwishlist.Item
 	Total    shared.Money
 }
 
-// Service groups the wishlist use cases behind a single struct, since they
-// share the same two repositories.
 type Service struct {
 	sections domainwishlist.SectionRepository
 	items    domainwishlist.ItemRepository
 }
 
-// NewService wires the wishlist service to its repositories.
 func NewService(sections domainwishlist.SectionRepository, items domainwishlist.ItemRepository) *Service {
 	return &Service{sections: sections, items: items}
 }
 
-// GetOverview returns the user's sections, items and total value.
 func (s *Service) GetOverview(ctx context.Context, userID uuid.UUID, kind string) (Overview, error) {
 	sections, err := s.sections.ListByUser(ctx, userID, kind)
 	if err != nil {
@@ -49,7 +41,6 @@ func (s *Service) GetOverview(ctx context.Context, userID uuid.UUID, kind string
 	return Overview{Sections: sections, Items: items, Total: total}, nil
 }
 
-// CreateSection adds a section, appended to the end of the user's ordering.
 func (s *Service) CreateSection(ctx context.Context, userID uuid.UUID, kind, name string) (*domainwishlist.Section, error) {
 	sec, err := domainwishlist.NewSection(userID, kind, name)
 	if err != nil {
@@ -66,7 +57,6 @@ func (s *Service) CreateSection(ctx context.Context, userID uuid.UUID, kind, nam
 	return sec, nil
 }
 
-// UpdateSection renames a section.
 func (s *Service) UpdateSection(ctx context.Context, userID, sectionID uuid.UUID, name string) (*domainwishlist.Section, error) {
 	sec, err := s.sections.FindByID(ctx, sectionID)
 	if err != nil {
@@ -84,8 +74,6 @@ func (s *Service) UpdateSection(ctx context.Context, userID, sectionID uuid.UUID
 	return sec, nil
 }
 
-// DeleteSection removes a section and moves its items to "Sem seção" so the
-// products the user wanted are never lost.
 func (s *Service) DeleteSection(ctx context.Context, userID, sectionID uuid.UUID) error {
 	sec, err := s.sections.FindByID(ctx, sectionID)
 	if err != nil {
@@ -114,7 +102,6 @@ func (s *Service) DeleteSection(ctx context.Context, userID, sectionID uuid.UUID
 	return nil
 }
 
-// ItemInput carries the editable fields of a wishlist item.
 type ItemInput struct {
 	Name      string
 	URL       string
@@ -123,8 +110,6 @@ type ItemInput struct {
 	SectionID *uuid.UUID
 }
 
-// CreateItem adds a product to the wishlist, validating the section belongs
-// to the user when provided.
 func (s *Service) CreateItem(ctx context.Context, userID uuid.UUID, kind string, in ItemInput) (*domainwishlist.Item, error) {
 	if err := s.verifySection(ctx, userID, in.SectionID); err != nil {
 		return nil, err
@@ -147,7 +132,6 @@ func (s *Service) CreateItem(ctx context.Context, userID uuid.UUID, kind string,
 	return item, nil
 }
 
-// UpdateItem replaces an item's editable fields.
 func (s *Service) UpdateItem(ctx context.Context, userID, itemID uuid.UUID, in ItemInput) (*domainwishlist.Item, error) {
 	item, err := s.items.FindByID(ctx, itemID)
 	if err != nil {
@@ -168,7 +152,6 @@ func (s *Service) UpdateItem(ctx context.Context, userID, itemID uuid.UUID, in I
 	return item, nil
 }
 
-// DeleteItem removes a wishlist item.
 func (s *Service) DeleteItem(ctx context.Context, userID, itemID uuid.UUID) error {
 	item, err := s.items.FindByID(ctx, itemID)
 	if err != nil {
@@ -183,9 +166,6 @@ func (s *Service) DeleteItem(ctx context.Context, userID, itemID uuid.UUID) erro
 	return nil
 }
 
-// ReorderItems persists a new manual ordering of the user's items within a
-// list (kind). Ids not owned by the user (or of the wrong kind) are ignored,
-// and only items whose position actually changes are written.
 func (s *Service) ReorderItems(ctx context.Context, userID uuid.UUID, kind string, orderedIDs []uuid.UUID) error {
 	owned, err := s.items.ListByUser(ctx, userID, kind)
 	if err != nil {
@@ -213,7 +193,6 @@ func (s *Service) ReorderItems(ctx context.Context, userID uuid.UUID, kind strin
 	return nil
 }
 
-// verifySection ensures a referenced section exists and belongs to the user.
 func (s *Service) verifySection(ctx context.Context, userID uuid.UUID, sectionID *uuid.UUID) error {
 	if sectionID == nil {
 		return nil

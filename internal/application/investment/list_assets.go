@@ -10,8 +10,6 @@ import (
 	"rinofinance-api/internal/domain/shared"
 )
 
-// PortfolioOverview is everything Aba 3 needs in one round trip: the assets,
-// their proventos, and the portfolio totals.
 type PortfolioOverview struct {
 	Assets         []*domaininvestment.Asset
 	Proventos      []*domaininvestment.Provento
@@ -20,18 +18,15 @@ type PortfolioOverview struct {
 	TotalProventos shared.Money
 }
 
-// ListAssetsUseCase builds the portfolio overview for a user.
 type ListAssetsUseCase struct {
 	assets    domaininvestment.Repository
 	proventos domaininvestment.ProventoRepository
 }
 
-// NewListAssetsUseCase wires the dependencies for ListAssetsUseCase.
 func NewListAssetsUseCase(assets domaininvestment.Repository, proventos domaininvestment.ProventoRepository) *ListAssetsUseCase {
 	return &ListAssetsUseCase{assets: assets, proventos: proventos}
 }
 
-// Execute returns the user's assets, proventos and portfolio totals.
 func (uc *ListAssetsUseCase) Execute(ctx context.Context, userID uuid.UUID) (PortfolioOverview, error) {
 	assets, err := uc.assets.ListByUser(ctx, userID)
 	if err != nil {

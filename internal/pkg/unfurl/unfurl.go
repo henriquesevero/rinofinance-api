@@ -1,7 +1,3 @@
-// Package unfurl fetches a web page and extracts its Open Graph / Twitter
-// metadata (image, title, price) so the wishlist can preview a product from
-// just its store link. Best-effort: sites that block bots or render only via
-// JS simply return empty fields.
 package unfurl
 
 import (
@@ -15,10 +11,8 @@ import (
 	"time"
 )
 
-// ErrInvalidURL is returned for a missing or non-http(s) URL.
 var ErrInvalidURL = errors.New("url inválida")
 
-// Metadata is the subset of a page's metadata the wishlist cares about.
 type Metadata struct {
 	ImageURL string `json:"imageUrl"`
 	Title    string `json:"title"`
@@ -31,14 +25,10 @@ var (
 	metaTagRe  = regexp.MustCompile(`(?is)<meta\b[^>]*>`)
 	linkTagRe  = regexp.MustCompile(`(?is)<link\b[^>]*>`)
 	titleTagRe = regexp.MustCompile(`(?is)<title[^>]*>(.*?)</title>`)
-	// Amazon serves the product photo via JS, but the URLs (under /images/I/)
-	// are still present in the HTML — grab the first one as a fallback.
+
 	amazonImgRe = regexp.MustCompile(`https://[a-z0-9.\-]*media-amazon\.com/images/I/[A-Za-z0-9._%\-]+\.(?:jpg|jpeg|png)`)
 )
 
-// Fetch downloads the page at rawURL and pulls its metadata. Returns
-// ErrInvalidURL for a bad URL; network/parse failures yield empty metadata
-// with a nil error (the caller treats "not found" as a non-error).
 func Fetch(ctx context.Context, rawURL string) (Metadata, error) {
 	rawURL = strings.TrimSpace(rawURL)
 	u, err := url.Parse(rawURL)
@@ -61,13 +51,12 @@ func Fetch(ctx context.Context, rawURL string) (Metadata, error) {
 	if err != nil {
 		return Metadata{}, nil
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode >= 400 {
 		return Metadata{}, nil
 	}
 
-	// Cap the read so a huge/streaming response can't exhaust memory.
-	body, _ := io.ReadAll(io.LimitReader(resp.Body, 2<<20)) // 2 MB
+	body, _ := io.ReadAll(io.LimitReader(resp.Body, 2<<20))
 	html := string(body)
 
 	image := metaContent(html, "og:image", "og:image:url", "og:image:secure_url", "twitter:image", "twitter:image:src")
@@ -95,8 +84,6 @@ func Fetch(ctx context.Context, rawURL string) (Metadata, error) {
 	return Metadata{ImageURL: image, Title: strings.TrimSpace(title), Price: strings.TrimSpace(price)}, nil
 }
 
-// metaContent returns the content of the first <meta> whose property or name
-// matches any of the given keys (case-insensitive).
 func metaContent(html string, keys ...string) string {
 	for _, tag := range metaTagRe.FindAllString(html, -1) {
 		key := attrValue(tag, "property")
@@ -117,8 +104,6 @@ func metaContent(html string, keys ...string) string {
 	return ""
 }
 
-// linkHref returns the href of the first <link> whose rel matches (e.g.
-// rel="image_src", a common non-OG image hint).
 func linkHref(html, rel string) string {
 	for _, tag := range linkTagRe.FindAllString(html, -1) {
 		if strings.EqualFold(attrValue(tag, "rel"), rel) {
@@ -130,7 +115,6 @@ func linkHref(html, rel string) string {
 	return ""
 }
 
-// attrValue extracts an HTML attribute's value (single or double quoted).
 func attrValue(tag, attr string) string {
 	re := regexp.MustCompile(`(?is)\b` + attr + `\s*=\s*("([^"]*)"|'([^']*)')`)
 	m := re.FindStringSubmatch(tag)

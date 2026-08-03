@@ -15,14 +15,10 @@ import (
 	"rinofinance-api/internal/domain/shared"
 )
 
-// SubscriptionRepository implements domain/card.SubscriptionRepository
-// against MongoDB.
 type SubscriptionRepository struct {
 	collection *mongo.Collection
 }
 
-// NewSubscriptionRepository wires a SubscriptionRepository to a database
-// handle.
 func NewSubscriptionRepository(db *mongo.Database) *SubscriptionRepository {
 	return &SubscriptionRepository{collection: db.Collection(subscriptionsCollection)}
 }
@@ -93,7 +89,6 @@ func (d subscriptionDoc) toDomain() (*domaincard.Subscription, error) {
 	}, nil
 }
 
-// Create inserts a new subscription document.
 func (r *SubscriptionRepository) Create(ctx context.Context, s *domaincard.Subscription) error {
 	doc, err := newSubscriptionDoc(s)
 	if err != nil {
@@ -105,7 +100,6 @@ func (r *SubscriptionRepository) Create(ctx context.Context, s *domaincard.Subsc
 	return nil
 }
 
-// FindByID fetches a subscription by ID.
 func (r *SubscriptionRepository) FindByID(ctx context.Context, id uuid.UUID) (*domaincard.Subscription, error) {
 	var doc subscriptionDoc
 	if err := r.collection.FindOne(ctx, bson.M{"_id": id.String()}).Decode(&doc); err != nil {
@@ -117,10 +111,20 @@ func (r *SubscriptionRepository) FindByID(ctx context.Context, id uuid.UUID) (*d
 	return doc.toDomain()
 }
 
-// ListByCard fetches every subscription belonging to a card.
 func (r *SubscriptionRepository) ListByCard(ctx context.Context, cardID uuid.UUID) ([]*domaincard.Subscription, error) {
+	return r.list(ctx, bson.M{"card_id": cardID.String()})
+}
+
+func (r *SubscriptionRepository) ListByCards(ctx context.Context, cardIDs []uuid.UUID) ([]*domaincard.Subscription, error) {
+	if len(cardIDs) == 0 {
+		return nil, nil
+	}
+	return r.list(ctx, bson.M{"card_id": bson.M{"$in": stringIDs(cardIDs)}})
+}
+
+func (r *SubscriptionRepository) list(ctx context.Context, filter bson.M) ([]*domaincard.Subscription, error) {
 	opts := options.Find().SetSort(bson.D{{Key: "position", Value: 1}, {Key: "created_at", Value: 1}})
-	cursor, err := r.collection.Find(ctx, bson.M{"card_id": cardID.String()}, opts)
+	cursor, err := r.collection.Find(ctx, filter, opts)
 	if err != nil {
 		return nil, fmt.Errorf("erro ao listar assinaturas: %w", err)
 	}
@@ -141,7 +145,6 @@ func (r *SubscriptionRepository) ListByCard(ctx context.Context, cardID uuid.UUI
 	return subscriptions, nil
 }
 
-// Update persists changes to a subscription's name and monthly amount.
 func (r *SubscriptionRepository) Update(ctx context.Context, s *domaincard.Subscription) error {
 	doc, err := newSubscriptionDoc(s)
 	if err != nil {
@@ -154,7 +157,6 @@ func (r *SubscriptionRepository) Update(ctx context.Context, s *domaincard.Subsc
 	return checkMatchedCount(res)
 }
 
-// Delete permanently removes a subscription document.
 func (r *SubscriptionRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	res, err := r.collection.DeleteOne(ctx, bson.M{"_id": id.String()})
 	if err != nil {

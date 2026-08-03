@@ -10,13 +10,11 @@ import (
 	"rinofinance-api/internal/adapters/http/dto"
 )
 
-// DashboardHandler exposes the Aba 1 "Painel Principal" summary endpoint.
 type DashboardHandler struct {
 	summary *appdashboard.GetMonthlySummaryUseCase
 	annual  *appdashboard.GetAnnualSummaryUseCase
 }
 
-// NewDashboardHandler wires the dependencies for DashboardHandler.
 func NewDashboardHandler(
 	summary *appdashboard.GetMonthlySummaryUseCase,
 	annual *appdashboard.GetAnnualSummaryUseCase,
@@ -24,7 +22,6 @@ func NewDashboardHandler(
 	return &DashboardHandler{summary: summary, annual: annual}
 }
 
-// GetSummary handles GET /api/dashboard/summary?month=YYYY-MM.
 func (h *DashboardHandler) GetSummary(w http.ResponseWriter, r *http.Request) {
 	userID, ok := requireUserID(w, r)
 	if !ok {
@@ -44,8 +41,6 @@ func (h *DashboardHandler) GetSummary(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, dto.NewDashboardResponse(summary))
 }
 
-// GetAnnual handles GET /api/dashboard/annual?year=YYYY, defaulting to the
-// current year when the parameter is absent or invalid.
 func (h *DashboardHandler) GetAnnual(w http.ResponseWriter, r *http.Request) {
 	userID, ok := requireUserID(w, r)
 	if !ok {

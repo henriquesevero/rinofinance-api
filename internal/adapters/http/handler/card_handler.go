@@ -9,8 +9,6 @@ import (
 	"rinofinance-api/internal/adapters/http/dto"
 )
 
-// CardHandler exposes CRUD endpoints for Aba 2: credit cards, installment
-// purchases and subscriptions.
 type CardHandler struct {
 	createCard                  *appcard.CreateCardUseCase
 	updateCard                  *appcard.UpdateCardUseCase
@@ -31,7 +29,6 @@ type CardHandler struct {
 	reorderSubscriptions        *appcard.ReorderSubscriptionsUseCase
 }
 
-// NewCardHandler wires the dependencies for CardHandler.
 func NewCardHandler(
 	createCard *appcard.CreateCardUseCase,
 	updateCard *appcard.UpdateCardUseCase,
@@ -72,7 +69,6 @@ func NewCardHandler(
 	}
 }
 
-// ListCards handles GET /api/cards?month=YYYY-MM.
 func (h *CardHandler) ListCards(w http.ResponseWriter, r *http.Request) {
 	userID, ok := requireUserID(w, r)
 	if !ok {
@@ -92,7 +88,6 @@ func (h *CardHandler) ListCards(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, dto.NewCardsOverviewResponse(overviews, grandTotal, reference))
 }
 
-// CreateCard handles POST /api/cards.
 func (h *CardHandler) CreateCard(w http.ResponseWriter, r *http.Request) {
 	userID, ok := requireUserID(w, r)
 	if !ok {
@@ -113,7 +108,6 @@ func (h *CardHandler) CreateCard(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusCreated, dto.NewCardResponse(c))
 }
 
-// UpdateCard handles PUT /api/cards/{id}.
 func (h *CardHandler) UpdateCard(w http.ResponseWriter, r *http.Request) {
 	userID, ok := requireUserID(w, r)
 	if !ok {
@@ -138,7 +132,6 @@ func (h *CardHandler) UpdateCard(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, dto.NewCardResponse(c))
 }
 
-// DeleteCard handles DELETE /api/cards/{id}.
 func (h *CardHandler) DeleteCard(w http.ResponseWriter, r *http.Request) {
 	userID, ok := requireUserID(w, r)
 	if !ok {
@@ -156,7 +149,6 @@ func (h *CardHandler) DeleteCard(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-// CreateInstallmentPurchase handles POST /api/cards/{cardId}/installment-purchases.
 func (h *CardHandler) CreateInstallmentPurchase(w http.ResponseWriter, r *http.Request) {
 	userID, ok := requireUserID(w, r)
 	if !ok {
@@ -191,7 +183,6 @@ func (h *CardHandler) CreateInstallmentPurchase(w http.ResponseWriter, r *http.R
 	writeJSON(w, http.StatusCreated, dto.NewInstallmentPurchaseResponse(p, firstInstallmentDate))
 }
 
-// UpdateInstallmentPurchase handles PUT /api/installment-purchases/{id}.
 func (h *CardHandler) UpdateInstallmentPurchase(w http.ResponseWriter, r *http.Request) {
 	userID, ok := requireUserID(w, r)
 	if !ok {
@@ -232,7 +223,6 @@ func (h *CardHandler) UpdateInstallmentPurchase(w http.ResponseWriter, r *http.R
 	writeJSON(w, http.StatusOK, dto.NewInstallmentPurchaseResponse(p, reference))
 }
 
-// ToggleInstallmentPurchaseFlag handles PATCH /api/installment-purchases/{id}/flag.
 func (h *CardHandler) ToggleInstallmentPurchaseFlag(w http.ResponseWriter, r *http.Request) {
 	userID, ok := requireUserID(w, r)
 	if !ok {
@@ -257,9 +247,6 @@ func (h *CardHandler) ToggleInstallmentPurchaseFlag(w http.ResponseWriter, r *ht
 	writeJSON(w, http.StatusOK, dto.NewInstallmentPurchaseResponse(p, reference))
 }
 
-// ToggleInstallmentPurchaseOwedExclusion handles
-// PATCH /api/installment-purchases/{id}/owed-exclusion, flipping whether the
-// purchase counts toward the card's "total que devo" sum.
 func (h *CardHandler) ToggleInstallmentPurchaseOwedExclusion(w http.ResponseWriter, r *http.Request) {
 	userID, ok := requireUserID(w, r)
 	if !ok {
@@ -284,7 +271,6 @@ func (h *CardHandler) ToggleInstallmentPurchaseOwedExclusion(w http.ResponseWrit
 	writeJSON(w, http.StatusOK, dto.NewInstallmentPurchaseResponse(p, reference))
 }
 
-// DeleteInstallmentPurchase handles DELETE /api/installment-purchases/{id}.
 func (h *CardHandler) DeleteInstallmentPurchase(w http.ResponseWriter, r *http.Request) {
 	userID, ok := requireUserID(w, r)
 	if !ok {
@@ -302,7 +288,6 @@ func (h *CardHandler) DeleteInstallmentPurchase(w http.ResponseWriter, r *http.R
 	w.WriteHeader(http.StatusNoContent)
 }
 
-// CreateSubscription handles POST /api/cards/{cardId}/subscriptions.
 func (h *CardHandler) CreateSubscription(w http.ResponseWriter, r *http.Request) {
 	userID, ok := requireUserID(w, r)
 	if !ok {
@@ -332,7 +317,6 @@ func (h *CardHandler) CreateSubscription(w http.ResponseWriter, r *http.Request)
 	writeJSON(w, http.StatusCreated, dto.NewSubscriptionResponse(s))
 }
 
-// UpdateSubscription handles PUT /api/subscriptions/{id}.
 func (h *CardHandler) UpdateSubscription(w http.ResponseWriter, r *http.Request) {
 	userID, ok := requireUserID(w, r)
 	if !ok {
@@ -362,7 +346,6 @@ func (h *CardHandler) UpdateSubscription(w http.ResponseWriter, r *http.Request)
 	writeJSON(w, http.StatusOK, dto.NewSubscriptionResponse(s))
 }
 
-// DeleteSubscription handles DELETE /api/subscriptions/{id}.
 func (h *CardHandler) DeleteSubscription(w http.ResponseWriter, r *http.Request) {
 	userID, ok := requireUserID(w, r)
 	if !ok {
@@ -380,7 +363,6 @@ func (h *CardHandler) DeleteSubscription(w http.ResponseWriter, r *http.Request)
 	w.WriteHeader(http.StatusNoContent)
 }
 
-// ImportFatura handles POST /api/cards/{cardId}/import.
 func (h *CardHandler) ImportFatura(w http.ResponseWriter, r *http.Request) {
 	userID, ok := requireUserID(w, r)
 	if !ok {
@@ -434,7 +416,6 @@ func (h *CardHandler) ImportFatura(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	// Fatura month ("YYYY-MM") → items become visible only from it onward.
 	var referenceMonth time.Time
 	if req.ReferenceMonth != "" {
 		if m, err := time.Parse("2006-01", req.ReferenceMonth); err == nil {
@@ -453,7 +434,6 @@ func (h *CardHandler) ImportFatura(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// ClearCard handles POST /api/cards/{cardId}/clear.
 func (h *CardHandler) ClearCard(w http.ResponseWriter, r *http.Request) {
 	userID, ok := requireUserID(w, r)
 	if !ok {
@@ -485,7 +465,7 @@ func (h *CardHandler) ClearCard(w http.ResponseWriter, r *http.Request) {
 		writeError(w, err)
 		return
 	}
-	// "end" (default) keeps past months; only an explicit "delete" wipes.
+
 	mode := appcard.ClearModeEnd
 	if req.Mode == string(appcard.ClearModeDelete) {
 		mode = appcard.ClearModeDelete
@@ -502,7 +482,6 @@ func (h *CardHandler) ClearCard(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// ReorderCards handles PUT /api/cards/order.
 func (h *CardHandler) ReorderCards(w http.ResponseWriter, r *http.Request) {
 	userID, ok := requireUserID(w, r)
 	if !ok {
@@ -527,7 +506,6 @@ func (h *CardHandler) ReorderCards(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-// ReorderInstallmentPurchases handles PUT /api/cards/{cardId}/installment-purchases/order.
 func (h *CardHandler) ReorderInstallmentPurchases(w http.ResponseWriter, r *http.Request) {
 	userID, ok := requireUserID(w, r)
 	if !ok {
@@ -554,7 +532,6 @@ func (h *CardHandler) ReorderInstallmentPurchases(w http.ResponseWriter, r *http
 	w.WriteHeader(http.StatusNoContent)
 }
 
-// ReorderSubscriptions handles PUT /api/cards/{cardId}/subscriptions/order.
 func (h *CardHandler) ReorderSubscriptions(w http.ResponseWriter, r *http.Request) {
 	userID, ok := requireUserID(w, r)
 	if !ok {

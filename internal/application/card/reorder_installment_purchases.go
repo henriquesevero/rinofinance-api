@@ -9,21 +9,15 @@ import (
 	domaincard "rinofinance-api/internal/domain/card"
 )
 
-// ReorderInstallmentPurchasesUseCase persists a new manual ordering of a
-// card's installment purchases (covering both parceladas and avulsas).
 type ReorderInstallmentPurchasesUseCase struct {
 	cards     domaincard.CardRepository
 	purchases domaincard.InstallmentPurchaseRepository
 }
 
-// NewReorderInstallmentPurchasesUseCase wires the dependencies.
 func NewReorderInstallmentPurchasesUseCase(cards domaincard.CardRepository, purchases domaincard.InstallmentPurchaseRepository) *ReorderInstallmentPurchasesUseCase {
 	return &ReorderInstallmentPurchasesUseCase{cards: cards, purchases: purchases}
 }
 
-// Execute verifies the card belongs to the user, then assigns each of its
-// purchases the position of its index in orderedIDs. IDs not belonging to
-// the card are ignored.
 func (uc *ReorderInstallmentPurchasesUseCase) Execute(ctx context.Context, userID, cardID uuid.UUID, orderedIDs []uuid.UUID) error {
 	if err := verifyCardOwnership(ctx, uc.cards, cardID, userID); err != nil {
 		return err

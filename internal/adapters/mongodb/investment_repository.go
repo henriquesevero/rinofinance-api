@@ -15,14 +15,10 @@ import (
 	"rinofinance-api/internal/domain/shared"
 )
 
-// InvestmentRepository implements domain/investment.Repository against
-// MongoDB.
 type InvestmentRepository struct {
 	collection *mongo.Collection
 }
 
-// NewInvestmentRepository wires an InvestmentRepository to a database
-// handle.
 func NewInvestmentRepository(db *mongo.Database) *InvestmentRepository {
 	return &InvestmentRepository{collection: db.Collection(investmentAssetsCollection)}
 }
@@ -31,10 +27,7 @@ type investmentAssetDoc struct {
 	ID     string `bson:"_id"`
 	UserID string `bson:"user_id"`
 	Name   string `bson:"name"`
-	// Ticker/Class/Quantity/AvgPrice/CurrentPrice/InvestedAmount are pointers so
-	// documents created before the "por cotas" model (which only stored
-	// current_balance) decode as nil and are back-filled with sensible defaults
-	// in toDomain rather than reading as an empty/zero position.
+
 	Ticker         *string          `bson:"ticker,omitempty"`
 	Class          *string          `bson:"class,omitempty"`
 	Quantity       *float64         `bson:"quantity,omitempty"`
@@ -42,10 +35,7 @@ type investmentAssetDoc struct {
 	CurrentPrice   *bson.Decimal128 `bson:"current_price,omitempty"`
 	InvestedAmount *bson.Decimal128 `bson:"invested_amount,omitempty"`
 	CurrentBalance bson.Decimal128  `bson:"current_balance"`
-	// Active is a pointer so documents created before this field existed
-	// (which have no "active" key) decode as nil and are treated as
-	// active, rather than defaulting to false and silently vanishing from
-	// the patrimony total.
+
 	Active    *bool     `bson:"active,omitempty"`
 	CreatedAt time.Time `bson:"created_at"`
 	UpdatedAt time.Time `bson:"updated_at"`
@@ -114,13 +104,11 @@ func (d investmentAssetDoc) toDomain() (*domaininvestment.Asset, error) {
 	if err != nil {
 		return nil, err
 	}
-	// Legacy documents (por-valor era) only stored current_balance. Treat that
-	// amount as both invested and current value so the position shows a neutral
-	// 0% P&L instead of −100%, and leaves quantity/prices at zero.
+
 	if d.InvestedAmount == nil {
 		invested = balance
 	}
-	// Legacy documents without the field are considered active.
+
 	active := d.Active == nil || *d.Active
 	ticker := ""
 	if d.Ticker != nil {
@@ -158,7 +146,6 @@ func decimalPtrToMoney(d *bson.Decimal128) (shared.Money, error) {
 	return fromDecimal128(*d)
 }
 
-// Create inserts a new investment asset document.
 func (r *InvestmentRepository) Create(ctx context.Context, a *domaininvestment.Asset) error {
 	doc, err := newInvestmentAssetDoc(a)
 	if err != nil {
@@ -170,7 +157,6 @@ func (r *InvestmentRepository) Create(ctx context.Context, a *domaininvestment.A
 	return nil
 }
 
-// FindByID fetches an investment asset by ID.
 func (r *InvestmentRepository) FindByID(ctx context.Context, id uuid.UUID) (*domaininvestment.Asset, error) {
 	var doc investmentAssetDoc
 	if err := r.collection.FindOne(ctx, bson.M{"_id": id.String()}).Decode(&doc); err != nil {
@@ -182,7 +168,6 @@ func (r *InvestmentRepository) FindByID(ctx context.Context, id uuid.UUID) (*dom
 	return doc.toDomain()
 }
 
-// ListByUser fetches every investment asset belonging to userID.
 func (r *InvestmentRepository) ListByUser(ctx context.Context, userID uuid.UUID) ([]*domaininvestment.Asset, error) {
 	cursor, err := r.collection.Find(ctx, bson.M{"user_id": userID.String()})
 	if err != nil {
@@ -205,7 +190,6 @@ func (r *InvestmentRepository) ListByUser(ctx context.Context, userID uuid.UUID)
 	return assets, nil
 }
 
-// Update persists changes to an asset.
 func (r *InvestmentRepository) Update(ctx context.Context, a *domaininvestment.Asset) error {
 	doc, err := newInvestmentAssetDoc(a)
 	if err != nil {
@@ -218,7 +202,6 @@ func (r *InvestmentRepository) Update(ctx context.Context, a *domaininvestment.A
 	return checkMatchedCount(res)
 }
 
-// Delete permanently removes an investment asset document.
 func (r *InvestmentRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	res, err := r.collection.DeleteOne(ctx, bson.M{"_id": id.String()})
 	if err != nil {
@@ -227,13 +210,10 @@ func (r *InvestmentRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	return checkDeletedCount(res)
 }
 
-// ProventoRepository implements domain/investment.ProventoRepository against
-// MongoDB.
 type ProventoRepository struct {
 	collection *mongo.Collection
 }
 
-// NewProventoRepository wires a ProventoRepository to a database handle.
 func NewProventoRepository(db *mongo.Database) *ProventoRepository {
 	return &ProventoRepository{collection: db.Collection(investmentProventosCollection)}
 }
@@ -289,7 +269,6 @@ func (d proventoDoc) toDomain() (*domaininvestment.Provento, error) {
 	}, nil
 }
 
-// Create inserts a new provento document.
 func (r *ProventoRepository) Create(ctx context.Context, p *domaininvestment.Provento) error {
 	doc, err := newProventoDoc(p)
 	if err != nil {
@@ -301,7 +280,6 @@ func (r *ProventoRepository) Create(ctx context.Context, p *domaininvestment.Pro
 	return nil
 }
 
-// FindByID fetches a provento by ID.
 func (r *ProventoRepository) FindByID(ctx context.Context, id uuid.UUID) (*domaininvestment.Provento, error) {
 	var doc proventoDoc
 	if err := r.collection.FindOne(ctx, bson.M{"_id": id.String()}).Decode(&doc); err != nil {
@@ -313,7 +291,6 @@ func (r *ProventoRepository) FindByID(ctx context.Context, id uuid.UUID) (*domai
 	return doc.toDomain()
 }
 
-// ListByUser fetches every provento belonging to userID, newest first.
 func (r *ProventoRepository) ListByUser(ctx context.Context, userID uuid.UUID) ([]*domaininvestment.Provento, error) {
 	opts := options.Find().SetSort(bson.D{{Key: "date", Value: -1}})
 	cursor, err := r.collection.Find(ctx, bson.M{"user_id": userID.String()}, opts)
@@ -337,7 +314,6 @@ func (r *ProventoRepository) ListByUser(ctx context.Context, userID uuid.UUID) (
 	return proventos, nil
 }
 
-// Delete permanently removes a provento document.
 func (r *ProventoRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	res, err := r.collection.DeleteOne(ctx, bson.M{"_id": id.String()})
 	if err != nil {
@@ -346,7 +322,6 @@ func (r *ProventoRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	return checkDeletedCount(res)
 }
 
-// DeleteByAsset removes every provento tied to an asset.
 func (r *ProventoRepository) DeleteByAsset(ctx context.Context, assetID uuid.UUID) error {
 	if _, err := r.collection.DeleteMany(ctx, bson.M{"asset_id": assetID.String()}); err != nil {
 		return fmt.Errorf("erro ao remover proventos do ativo: %w", err)

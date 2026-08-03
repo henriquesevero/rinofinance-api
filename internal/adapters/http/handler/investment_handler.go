@@ -8,8 +8,6 @@ import (
 	"rinofinance-api/internal/adapters/http/dto"
 )
 
-// InvestmentHandler exposes CRUD endpoints for Aba 3's investment/
-// patrimony assets and their proventos.
 type InvestmentHandler struct {
 	create         *appinvestment.CreateAssetUseCase
 	update         *appinvestment.UpdateAssetUseCase
@@ -20,7 +18,6 @@ type InvestmentHandler struct {
 	deleteProvento *appinvestment.DeleteProventoUseCase
 }
 
-// NewInvestmentHandler wires the dependencies for InvestmentHandler.
 func NewInvestmentHandler(
 	create *appinvestment.CreateAssetUseCase,
 	update *appinvestment.UpdateAssetUseCase,
@@ -41,7 +38,6 @@ func NewInvestmentHandler(
 	}
 }
 
-// List handles GET /api/investments.
 func (h *InvestmentHandler) List(w http.ResponseWriter, r *http.Request) {
 	userID, ok := requireUserID(w, r)
 	if !ok {
@@ -56,7 +52,6 @@ func (h *InvestmentHandler) List(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, dto.NewAssetsOverviewResponse(overview))
 }
 
-// Create handles POST /api/investments.
 func (h *InvestmentHandler) Create(w http.ResponseWriter, r *http.Request) {
 	userID, ok := requireUserID(w, r)
 	if !ok {
@@ -77,7 +72,6 @@ func (h *InvestmentHandler) Create(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusCreated, dto.NewAssetResponse(a))
 }
 
-// Update handles PUT /api/investments/{id}.
 func (h *InvestmentHandler) Update(w http.ResponseWriter, r *http.Request) {
 	userID, ok := requireUserID(w, r)
 	if !ok {
@@ -102,7 +96,6 @@ func (h *InvestmentHandler) Update(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, dto.NewAssetResponse(a))
 }
 
-// Toggle handles PATCH /api/investments/{id}/toggle.
 func (h *InvestmentHandler) Toggle(w http.ResponseWriter, r *http.Request) {
 	userID, ok := requireUserID(w, r)
 	if !ok {
@@ -121,7 +114,6 @@ func (h *InvestmentHandler) Toggle(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, dto.NewAssetResponse(a))
 }
 
-// Delete handles DELETE /api/investments/{id}.
 func (h *InvestmentHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	userID, ok := requireUserID(w, r)
 	if !ok {
@@ -139,7 +131,6 @@ func (h *InvestmentHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-// CreateProvento handles POST /api/investments/proventos.
 func (h *InvestmentHandler) CreateProvento(w http.ResponseWriter, r *http.Request) {
 	userID, ok := requireUserID(w, r)
 	if !ok {
@@ -160,7 +151,6 @@ func (h *InvestmentHandler) CreateProvento(w http.ResponseWriter, r *http.Reques
 	writeJSON(w, http.StatusCreated, dto.NewProventoResponse(p))
 }
 
-// DeleteProvento handles DELETE /api/investments/proventos/{id}.
 func (h *InvestmentHandler) DeleteProvento(w http.ResponseWriter, r *http.Request) {
 	userID, ok := requireUserID(w, r)
 	if !ok {

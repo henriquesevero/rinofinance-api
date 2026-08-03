@@ -11,9 +11,6 @@ import (
 	"rinofinance-api/internal/domain/shared"
 )
 
-// ImportInstallmentInput describes one installment purchase to import from
-// a parsed statement (a single "avulsa" purchase is just totalInstallments
-// = 1).
 type ImportInstallmentInput struct {
 	Name                 string
 	InstallmentAmount    shared.Money
@@ -23,7 +20,6 @@ type ImportInstallmentInput struct {
 	CategoryID           *uuid.UUID
 }
 
-// ImportSubscriptionInput describes one subscription to import.
 type ImportSubscriptionInput struct {
 	Name          string
 	MonthlyAmount shared.Money
@@ -31,25 +27,17 @@ type ImportSubscriptionInput struct {
 	CategoryID    *uuid.UUID
 }
 
-// ImportResult reports how many items were created.
 type ImportResult struct {
 	InstallmentPurchases int
 	Subscriptions        int
 }
 
-// ImportCardItemsUseCase bulk-creates installment purchases and
-// subscriptions under a card, used by the "importar fatura" feature. It
-// validates every item up front (building the domain aggregates) before
-// persisting any, so a malformed entry aborts the whole import instead of
-// leaving a half-imported statement.
 type ImportCardItemsUseCase struct {
 	cards         domaincard.CardRepository
 	purchases     domaincard.InstallmentPurchaseRepository
 	subscriptions domaincard.SubscriptionRepository
 }
 
-// NewImportCardItemsUseCase wires the dependencies for
-// ImportCardItemsUseCase.
 func NewImportCardItemsUseCase(
 	cards domaincard.CardRepository,
 	purchases domaincard.InstallmentPurchaseRepository,
@@ -58,8 +46,6 @@ func NewImportCardItemsUseCase(
 	return &ImportCardItemsUseCase{cards: cards, purchases: purchases, subscriptions: subscriptions}
 }
 
-// Execute verifies the card belongs to userID, builds every purchase and
-// subscription (failing fast on any invalid one), then persists them.
 func (uc *ImportCardItemsUseCase) Execute(
 	ctx context.Context,
 	userID, cardID uuid.UUID,
@@ -71,12 +57,8 @@ func (uc *ImportCardItemsUseCase) Execute(
 		return ImportResult{}, err
 	}
 
-	// Bound imported items to the fatura's month so a mid-way parcela (e.g.
-	// 2/3) shows only from the imported bill onward, never populating earlier
-	// months it was never tracked in.
 	effectiveFrom := referenceMonth
 
-	// Build (and validate) everything before writing anything.
 	builtPurchases := make([]*domaincard.InstallmentPurchase, 0, len(installments))
 	for _, in := range installments {
 		p, err := domaincard.NewInstallmentPurchase(cardID, in.Name, in.InstallmentAmount, in.TotalInstallments, in.FirstInstallmentDate)

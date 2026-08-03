@@ -14,12 +14,10 @@ import (
 	domainuser "rinofinance-api/internal/domain/user"
 )
 
-// UserRepository implements domain/user.Repository against MongoDB.
 type UserRepository struct {
 	collection *mongo.Collection
 }
 
-// NewUserRepository wires a UserRepository to a database handle.
 func NewUserRepository(db *mongo.Database) *UserRepository {
 	return &UserRepository{collection: db.Collection(usersCollection)}
 }
@@ -69,9 +67,6 @@ func (d userDoc) toDomain() (*domainuser.User, error) {
 	}, nil
 }
 
-// Create inserts a new user document. A duplicate email is reported as
-// domainuser.ErrEmailAlreadyInUse via the unique index created in
-// EnsureIndexes.
 func (r *UserRepository) Create(ctx context.Context, u *domainuser.User) error {
 	if _, err := r.collection.InsertOne(ctx, newUserDoc(u)); err != nil {
 		if mongo.IsDuplicateKeyError(err) {
@@ -82,7 +77,6 @@ func (r *UserRepository) Create(ctx context.Context, u *domainuser.User) error {
 	return nil
 }
 
-// FindByID fetches a user by ID.
 func (r *UserRepository) FindByID(ctx context.Context, id uuid.UUID) (*domainuser.User, error) {
 	var doc userDoc
 	if err := r.collection.FindOne(ctx, bson.M{"_id": id.String()}).Decode(&doc); err != nil {
@@ -94,8 +88,6 @@ func (r *UserRepository) FindByID(ctx context.Context, id uuid.UUID) (*domainuse
 	return doc.toDomain()
 }
 
-// FindByEmail fetches a user by email (used for login and duplicate
-// registration checks).
 func (r *UserRepository) FindByEmail(ctx context.Context, email string) (*domainuser.User, error) {
 	var doc userDoc
 	if err := r.collection.FindOne(ctx, bson.M{"email": email}).Decode(&doc); err != nil {
@@ -107,7 +99,6 @@ func (r *UserRepository) FindByEmail(ctx context.Context, email string) (*domain
 	return doc.toDomain()
 }
 
-// Update persists changes to name, email, avatar and password hash.
 func (r *UserRepository) Update(ctx context.Context, u *domainuser.User) error {
 	res, err := r.collection.ReplaceOne(ctx, bson.M{"_id": u.ID.String()}, newUserDoc(u))
 	if err != nil {
@@ -116,9 +107,6 @@ func (r *UserRepository) Update(ctx context.Context, u *domainuser.User) error {
 	return checkMatchedCount(res)
 }
 
-// Delete permanently removes a user document. Callers (see
-// application/profile.DeleteAccountUseCase) are responsible for first
-// deleting every other aggregate the user owns.
 func (r *UserRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	res, err := r.collection.DeleteOne(ctx, bson.M{"_id": id.String()})
 	if err != nil {

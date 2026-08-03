@@ -11,18 +11,14 @@ import (
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
 
-	domainwishlist "rinofinance-api/internal/domain/wishlist"
 	"rinofinance-api/internal/domain/shared"
+	domainwishlist "rinofinance-api/internal/domain/wishlist"
 )
 
-// ---- Sections ----
-
-// WishlistSectionRepository implements domain/wishlist.SectionRepository.
 type WishlistSectionRepository struct {
 	collection *mongo.Collection
 }
 
-// NewWishlistSectionRepository wires the repository to a database handle.
 func NewWishlistSectionRepository(db *mongo.Database) *WishlistSectionRepository {
 	return &WishlistSectionRepository{collection: db.Collection(wishlistSectionsCollection)}
 }
@@ -124,14 +120,10 @@ func (r *WishlistSectionRepository) Delete(ctx context.Context, id uuid.UUID) er
 	return checkDeletedCount(res)
 }
 
-// ---- Items ----
-
-// WishlistItemRepository implements domain/wishlist.ItemRepository.
 type WishlistItemRepository struct {
 	collection *mongo.Collection
 }
 
-// NewWishlistItemRepository wires the repository to a database handle.
 func NewWishlistItemRepository(db *mongo.Database) *WishlistItemRepository {
 	return &WishlistItemRepository{collection: db.Collection(wishlistItemsCollection)}
 }

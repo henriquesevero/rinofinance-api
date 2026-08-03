@@ -11,19 +11,15 @@ import (
 	"rinofinance-api/internal/domain/shared"
 )
 
-// CreateProventoUseCase records a provento (dividend/rendimento) received from
-// one of the user's assets.
 type CreateProventoUseCase struct {
 	assets    domaininvestment.Repository
 	proventos domaininvestment.ProventoRepository
 }
 
-// NewCreateProventoUseCase wires the dependencies for CreateProventoUseCase.
 func NewCreateProventoUseCase(assets domaininvestment.Repository, proventos domaininvestment.ProventoRepository) *CreateProventoUseCase {
 	return &CreateProventoUseCase{assets: assets, proventos: proventos}
 }
 
-// Execute verifies the asset belongs to the user, then persists the provento.
 func (uc *CreateProventoUseCase) Execute(ctx context.Context, userID, assetID uuid.UUID, amount shared.Money, date time.Time) (*domaininvestment.Provento, error) {
 	a, err := uc.assets.FindByID(ctx, assetID)
 	if err != nil {

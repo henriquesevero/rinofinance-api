@@ -2,9 +2,6 @@ package middleware
 
 import "net/http"
 
-// CORS returns middleware that allows cross-origin requests from the
-// given origins (the Vercel-hosted frontend URL(s) in production) and
-// short-circuits preflight OPTIONS requests.
 func CORS(allowedOrigins []string) func(http.Handler) http.Handler {
 	allowed := make(map[string]bool, len(allowedOrigins))
 	for _, o := range allowedOrigins {

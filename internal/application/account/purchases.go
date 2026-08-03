@@ -11,8 +11,6 @@ import (
 	"rinofinance-api/internal/domain/shared"
 )
 
-// CreateAccountPurchaseUseCase records a one-off debit purchase under an
-// account.
 type CreateAccountPurchaseUseCase struct {
 	accounts  domainaccount.Repository
 	purchases domainaccount.PurchaseRepository
@@ -54,8 +52,6 @@ func (uc *CreateAccountPurchaseUseCase) Execute(ctx context.Context, userID, acc
 	return p, nil
 }
 
-// UpdateAccountPurchaseUseCase edits a debit purchase, verifying ownership
-// through its parent account.
 type UpdateAccountPurchaseUseCase struct {
 	accounts  domainaccount.Repository
 	purchases domainaccount.PurchaseRepository
@@ -93,7 +89,6 @@ func (uc *UpdateAccountPurchaseUseCase) Execute(ctx context.Context, userID, pur
 		return nil, fmt.Errorf("erro ao atualizar compra da conta: %w", err)
 	}
 
-	// Restore the old amount and apply the new one to the balance.
 	account.Credit(previousAmount)
 	account.Debit(amount)
 	if err := uc.accounts.Update(ctx, account); err != nil {
@@ -102,7 +97,6 @@ func (uc *UpdateAccountPurchaseUseCase) Execute(ctx context.Context, userID, pur
 	return p, nil
 }
 
-// DeleteAccountPurchaseUseCase removes a debit purchase.
 type DeleteAccountPurchaseUseCase struct {
 	accounts  domainaccount.Repository
 	purchases domainaccount.PurchaseRepository
@@ -135,9 +129,6 @@ func (uc *DeleteAccountPurchaseUseCase) Execute(ctx context.Context, userID, pur
 	return nil
 }
 
-// AccountDebitResolver refreshes an account-linked expense's in-memory
-// Amount from its account's current-month debit purchases total (mirroring
-// the CardAmountResolver). A pure read-time concern.
 type AccountDebitResolver struct {
 	purchases domainaccount.PurchaseRepository
 }
@@ -146,8 +137,6 @@ func NewAccountDebitResolver(purchases domainaccount.PurchaseRepository) *Accoun
 	return &AccountDebitResolver{purchases: purchases}
 }
 
-// MonthlyDebitTotal returns the sum of an account's purchases in the
-// reference month.
 func (r *AccountDebitResolver) MonthlyDebitTotal(ctx context.Context, accountID uuid.UUID, reference time.Time) (shared.Money, error) {
 	purchases, err := r.purchases.ListByAccount(ctx, accountID)
 	if err != nil {

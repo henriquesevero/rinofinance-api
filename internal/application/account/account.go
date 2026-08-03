@@ -1,5 +1,3 @@
-// Package account orchestrates use cases for the user's bank/wallet
-// accounts and their debit purchases.
 package account
 
 import (
@@ -13,7 +11,6 @@ import (
 	"rinofinance-api/internal/domain/shared"
 )
 
-// CreateAccountUseCase creates a new account for a user.
 type CreateAccountUseCase struct {
 	repo domainaccount.Repository
 }
@@ -42,8 +39,6 @@ func (uc *CreateAccountUseCase) Execute(ctx context.Context, userID uuid.UUID, n
 	return a, nil
 }
 
-// ReorderAccountsUseCase persists a new manual ordering of a user's
-// accounts.
 type ReorderAccountsUseCase struct {
 	repo domainaccount.Repository
 }
@@ -79,8 +74,6 @@ func (uc *ReorderAccountsUseCase) Execute(ctx context.Context, userID uuid.UUID,
 	return nil
 }
 
-// UpdateAccountUseCase renames/recolors an account, replaces its image and
-// sets its defined balance.
 type UpdateAccountUseCase struct {
 	repo domainaccount.Repository
 }
@@ -109,8 +102,6 @@ func (uc *UpdateAccountUseCase) Execute(ctx context.Context, userID, accountID u
 	return a, nil
 }
 
-// DeleteAccountUseCase removes an account and cascades to its debit
-// purchases. Expenses linked to it fall back to "sem conta" in the UI.
 type DeleteAccountUseCase struct {
 	repo      domainaccount.Repository
 	purchases domainaccount.PurchaseRepository
@@ -137,17 +128,12 @@ func (uc *DeleteAccountUseCase) Execute(ctx context.Context, userID, accountID u
 	return nil
 }
 
-// AccountOverview is one account plus its debit purchases and the monthly
-// debit total. The current balance lives on the Account itself (debit
-// purchases already decremented it).
 type AccountOverview struct {
 	Account           *domainaccount.Account
 	Purchases         []*domainaccount.Purchase
 	MonthlyDebitTotal shared.Money
 }
 
-// ListAccountsUseCase lists every account with its purchases and the
-// current month's debit total.
 type ListAccountsUseCase struct {
 	repo      domainaccount.Repository
 	purchases domainaccount.PurchaseRepository
@@ -163,17 +149,27 @@ func (uc *ListAccountsUseCase) Execute(ctx context.Context, userID uuid.UUID, re
 		return nil, shared.Zero, fmt.Errorf("erro ao listar contas: %w", err)
 	}
 
+	accountIDs := make([]uuid.UUID, len(accounts))
+	for i, a := range accounts {
+		accountIDs[i] = a.ID
+	}
+	purchases, err := uc.purchases.ListByAccounts(ctx, accountIDs)
+	if err != nil {
+		return nil, shared.Zero, err
+	}
+	purchasesByAccount := make(map[uuid.UUID][]*domainaccount.Purchase)
+	for _, p := range purchases {
+		purchasesByAccount[p.AccountID] = append(purchasesByAccount[p.AccountID], p)
+	}
+
 	overviews := make([]AccountOverview, 0, len(accounts))
 	totalBalance := shared.Zero
 	for _, a := range accounts {
-		purchases, err := uc.purchases.ListByAccount(ctx, a.ID)
-		if err != nil {
-			return nil, shared.Zero, err
-		}
+		accountPurchases := purchasesByAccount[a.ID]
 		overviews = append(overviews, AccountOverview{
 			Account:           a,
-			Purchases:         purchases,
-			MonthlyDebitTotal: domainaccount.MonthlyPurchasesTotal(reference, purchases),
+			Purchases:         accountPurchases,
+			MonthlyDebitTotal: domainaccount.MonthlyPurchasesTotal(reference, accountPurchases),
 		})
 		totalBalance = totalBalance.Add(a.Balance)
 	}

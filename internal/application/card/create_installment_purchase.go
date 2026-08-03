@@ -11,19 +11,15 @@ import (
 	"rinofinance-api/internal/domain/shared"
 )
 
-// CreateInstallmentPurchaseUseCase adds an installment purchase to a card.
 type CreateInstallmentPurchaseUseCase struct {
 	cards     domaincard.CardRepository
 	purchases domaincard.InstallmentPurchaseRepository
 }
 
-// NewCreateInstallmentPurchaseUseCase wires the dependencies for
-// CreateInstallmentPurchaseUseCase.
 func NewCreateInstallmentPurchaseUseCase(cards domaincard.CardRepository, purchases domaincard.InstallmentPurchaseRepository) *CreateInstallmentPurchaseUseCase {
 	return &CreateInstallmentPurchaseUseCase{cards: cards, purchases: purchases}
 }
 
-// Execute verifies the card belongs to userID, then creates the purchase.
 func (uc *CreateInstallmentPurchaseUseCase) Execute(
 	ctx context.Context,
 	userID, cardID uuid.UUID,

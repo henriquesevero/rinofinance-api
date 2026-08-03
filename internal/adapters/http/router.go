@@ -1,6 +1,3 @@
-// Package rest wires the HTTP routing table: it is the outermost layer of
-// the primary (driving) adapter, composing the handler and middleware
-// packages into a single http.Handler for cmd/api/main.go to serve.
 package rest
 
 import (
@@ -13,8 +10,6 @@ import (
 	"rinofinance-api/internal/pkg/auth"
 )
 
-// Handlers bundles every resource handler the router needs. main.go
-// constructs one of these after wiring all use cases and repositories.
 type Handlers struct {
 	Auth       *handler.AuthHandler
 	Account    *handler.AccountHandler
@@ -28,9 +23,6 @@ type Handlers struct {
 	Dashboard  *handler.DashboardHandler
 }
 
-// NewRouter builds the full HTTP routing table, applying CORS to every
-// route and JWT authentication to every route except /health and
-// /api/auth/*.
 func NewRouter(h Handlers, tokens *auth.TokenIssuer, resolveOwner func(uuid.UUID) uuid.UUID, allowedOrigins []string) http.Handler {
 	mux := http.NewServeMux()
 

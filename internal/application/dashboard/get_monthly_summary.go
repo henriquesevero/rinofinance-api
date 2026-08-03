@@ -1,6 +1,3 @@
-// Package dashboard orchestrates the Aba 1 "Painel Principal" summary,
-// combining incomes and expenses (resolving card-linked expenses to their
-// live card total) into the month's net balance.
 package dashboard
 
 import (
@@ -18,9 +15,6 @@ import (
 	"rinofinance-api/internal/domain/shared"
 )
 
-// MonthlySummary is the full payload for Aba 1: every income and expense
-// line for the month, plus the three headline figures (soma de entradas
-// ativas, soma de saídas ativas, saldo líquido).
 type MonthlySummary struct {
 	Incomes       []*domainincome.Income
 	Expenses      []*domainexpense.Expense
@@ -30,8 +24,6 @@ type MonthlySummary struct {
 	ReferenceDate time.Time
 }
 
-// GetMonthlySummaryUseCase computes the MonthlySummary for a user and
-// reference month.
 type GetMonthlySummaryUseCase struct {
 	incomes         domainincome.Repository
 	expenses        domainexpense.Repository
@@ -41,8 +33,6 @@ type GetMonthlySummaryUseCase struct {
 	status          monthlystatus.Repository
 }
 
-// NewGetMonthlySummaryUseCase wires the dependencies for
-// GetMonthlySummaryUseCase.
 func NewGetMonthlySummaryUseCase(
 	incomes domainincome.Repository,
 	expenses domainexpense.Repository,
@@ -61,10 +51,6 @@ func NewGetMonthlySummaryUseCase(
 	}
 }
 
-// Execute loads every income and expense for userID, resolves card-linked
-// expense amounts against reference, and sums only the active lines into
-// the headline totals — implementing the "Regra de Ativação" at the
-// dashboard level.
 func (uc *GetMonthlySummaryUseCase) Execute(ctx context.Context, userID uuid.UUID, reference time.Time) (*MonthlySummary, error) {
 	incomes, err := uc.incomes.ListByUser(ctx, userID)
 	if err != nil {
@@ -85,8 +71,6 @@ func (uc *GetMonthlySummaryUseCase) Execute(ctx context.Context, userID uuid.UUI
 		return nil, err
 	}
 
-	// Overlay the per-month received/paid status so the checkmarks reflect the
-	// month being viewed (they reset each month) instead of a global flag.
 	monthKey := reference.Format("2006-01")
 	incStatus, err := uc.status.ByMonth(ctx, userID, monthlystatus.Income, monthKey)
 	if err != nil {

@@ -5,7 +5,6 @@ import (
 	"rinofinance-api/internal/domain/shared"
 )
 
-// DashboardResponse is the full payload for Aba 1 (Painel Principal).
 type DashboardResponse struct {
 	Incomes      []IncomeResponse  `json:"incomes"`
 	Expenses     []ExpenseResponse `json:"expenses"`
@@ -14,8 +13,6 @@ type DashboardResponse struct {
 	NetBalance   shared.Money      `json:"netBalance"`
 }
 
-// NewDashboardResponse builds a DashboardResponse from the application
-// layer's MonthlySummary.
 func NewDashboardResponse(s *appdashboard.MonthlySummary) DashboardResponse {
 	return DashboardResponse{
 		Incomes:      NewIncomeResponseList(s.Incomes),
@@ -26,7 +23,6 @@ func NewDashboardResponse(s *appdashboard.MonthlySummary) DashboardResponse {
 	}
 }
 
-// AnnualMonthResponse is one month's income/expense totals in both lenses.
 type AnnualMonthResponse struct {
 	Index           int          `json:"index"`
 	IncomeRealized  shared.Money `json:"incomeRealized"`
@@ -35,15 +31,11 @@ type AnnualMonthResponse struct {
 	ExpensePlanned  shared.Money `json:"expensePlanned"`
 }
 
-// AnnualCategoryResponse is a category's total across the year.
 type AnnualCategoryResponse struct {
 	ID    string       `json:"id"`
 	Total shared.Money `json:"total"`
 }
 
-// AnnualSummaryResponse is the full payload for "Visão anual": every month and
-// the year's category totals, precomputed for both realized and planned so the
-// client can switch modes without another request.
 type AnnualSummaryResponse struct {
 	Year                      int                      `json:"year"`
 	Months                    []AnnualMonthResponse    `json:"months"`
@@ -53,7 +45,6 @@ type AnnualSummaryResponse struct {
 	IncomeCategoriesPlanned   []AnnualCategoryResponse `json:"incomeCategoriesPlanned"`
 }
 
-// NewAnnualSummaryResponse maps the application AnnualSummary onto its DTO.
 func NewAnnualSummaryResponse(s *appdashboard.AnnualSummary) AnnualSummaryResponse {
 	months := make([]AnnualMonthResponse, 0, len(s.Months))
 	for _, m := range s.Months {

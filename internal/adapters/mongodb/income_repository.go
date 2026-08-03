@@ -15,12 +15,10 @@ import (
 	"rinofinance-api/internal/domain/shared"
 )
 
-// IncomeRepository implements domain/income.Repository against MongoDB.
 type IncomeRepository struct {
 	collection *mongo.Collection
 }
 
-// NewIncomeRepository wires an IncomeRepository to a database handle.
 func NewIncomeRepository(db *mongo.Database) *IncomeRepository {
 	return &IncomeRepository{collection: db.Collection(incomesCollection)}
 }
@@ -95,7 +93,6 @@ func (d incomeDoc) toDomain() (*domainincome.Income, error) {
 	}, nil
 }
 
-// Create inserts a new income document.
 func (r *IncomeRepository) Create(ctx context.Context, i *domainincome.Income) error {
 	doc, err := newIncomeDoc(i)
 	if err != nil {
@@ -107,7 +104,6 @@ func (r *IncomeRepository) Create(ctx context.Context, i *domainincome.Income) e
 	return nil
 }
 
-// FindByID fetches an income by ID.
 func (r *IncomeRepository) FindByID(ctx context.Context, id uuid.UUID) (*domainincome.Income, error) {
 	var doc incomeDoc
 	if err := r.collection.FindOne(ctx, bson.M{"_id": id.String()}).Decode(&doc); err != nil {
@@ -119,7 +115,6 @@ func (r *IncomeRepository) FindByID(ctx context.Context, id uuid.UUID) (*domaini
 	return doc.toDomain()
 }
 
-// ListByUser fetches every income belonging to userID.
 func (r *IncomeRepository) ListByUser(ctx context.Context, userID uuid.UUID) ([]*domainincome.Income, error) {
 	opts := options.Find().SetSort(bson.D{{Key: "position", Value: 1}, {Key: "created_at", Value: 1}})
 	cursor, err := r.collection.Find(ctx, bson.M{"user_id": userID.String()}, opts)
@@ -143,7 +138,6 @@ func (r *IncomeRepository) ListByUser(ctx context.Context, userID uuid.UUID) ([]
 	return incomes, nil
 }
 
-// Update persists changes to name, amount and active flag.
 func (r *IncomeRepository) Update(ctx context.Context, i *domainincome.Income) error {
 	doc, err := newIncomeDoc(i)
 	if err != nil {
@@ -156,7 +150,6 @@ func (r *IncomeRepository) Update(ctx context.Context, i *domainincome.Income) e
 	return checkMatchedCount(res)
 }
 
-// Delete permanently removes an income document.
 func (r *IncomeRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	res, err := r.collection.DeleteOne(ctx, bson.M{"_id": id.String()})
 	if err != nil {

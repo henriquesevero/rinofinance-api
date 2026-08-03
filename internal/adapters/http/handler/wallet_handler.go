@@ -8,9 +8,6 @@ import (
 	"rinofinance-api/internal/adapters/http/dto"
 )
 
-// WalletHandler exposes endpoints for the user's bank/wallet accounts and
-// their debit purchases (named distinctly to avoid clashing with the
-// user-profile AccountHandler).
 type WalletHandler struct {
 	create         *appaccount.CreateAccountUseCase
 	update         *appaccount.UpdateAccountUseCase
@@ -22,7 +19,6 @@ type WalletHandler struct {
 	deletePurchase *appaccount.DeleteAccountPurchaseUseCase
 }
 
-// NewWalletHandler wires the dependencies for WalletHandler.
 func NewWalletHandler(
 	create *appaccount.CreateAccountUseCase,
 	update *appaccount.UpdateAccountUseCase,
@@ -45,7 +41,6 @@ func NewWalletHandler(
 	}
 }
 
-// Reorder handles PUT /api/accounts/order.
 func (h *WalletHandler) Reorder(w http.ResponseWriter, r *http.Request) {
 	userID, ok := requireUserID(w, r)
 	if !ok {
@@ -68,7 +63,6 @@ func (h *WalletHandler) Reorder(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-// List handles GET /api/accounts?month=YYYY-MM.
 func (h *WalletHandler) List(w http.ResponseWriter, r *http.Request) {
 	userID, ok := requireUserID(w, r)
 	if !ok {
@@ -87,7 +81,6 @@ func (h *WalletHandler) List(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, dto.NewAccountsOverviewResponse(overviews, total))
 }
 
-// Create handles POST /api/accounts.
 func (h *WalletHandler) Create(w http.ResponseWriter, r *http.Request) {
 	userID, ok := requireUserID(w, r)
 	if !ok {
@@ -106,7 +99,6 @@ func (h *WalletHandler) Create(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusCreated, dto.NewCreatedAccountResponse(a))
 }
 
-// Update handles PUT /api/accounts/{id}.
 func (h *WalletHandler) Update(w http.ResponseWriter, r *http.Request) {
 	userID, ok := requireUserID(w, r)
 	if !ok {
@@ -129,7 +121,6 @@ func (h *WalletHandler) Update(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, dto.NewCreatedAccountResponse(a))
 }
 
-// Delete handles DELETE /api/accounts/{id}.
 func (h *WalletHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	userID, ok := requireUserID(w, r)
 	if !ok {
@@ -146,7 +137,6 @@ func (h *WalletHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-// CreatePurchase handles POST /api/accounts/{accountId}/purchases.
 func (h *WalletHandler) CreatePurchase(w http.ResponseWriter, r *http.Request) {
 	userID, ok := requireUserID(w, r)
 	if !ok {
@@ -179,7 +169,6 @@ func (h *WalletHandler) CreatePurchase(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusCreated, dto.NewAccountPurchaseResponse(p))
 }
 
-// UpdatePurchase handles PUT /api/account-purchases/{id}.
 func (h *WalletHandler) UpdatePurchase(w http.ResponseWriter, r *http.Request) {
 	userID, ok := requireUserID(w, r)
 	if !ok {
@@ -212,7 +201,6 @@ func (h *WalletHandler) UpdatePurchase(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, dto.NewAccountPurchaseResponse(p))
 }
 
-// DeletePurchase handles DELETE /api/account-purchases/{id}.
 func (h *WalletHandler) DeletePurchase(w http.ResponseWriter, r *http.Request) {
 	userID, ok := requireUserID(w, r)
 	if !ok {

@@ -15,12 +15,10 @@ import (
 	"rinofinance-api/internal/domain/shared"
 )
 
-// AccountRepository implements domain/account.Repository against MongoDB.
 type AccountRepository struct {
 	collection *mongo.Collection
 }
 
-// NewAccountRepository wires an AccountRepository to a database handle.
 func NewAccountRepository(db *mongo.Database) *AccountRepository {
 	return &AccountRepository{collection: db.Collection(accountsCollection)}
 }
@@ -81,7 +79,6 @@ func (d accountDoc) toDomain() (*domainaccount.Account, error) {
 	}, nil
 }
 
-// Create inserts a new account document.
 func (r *AccountRepository) Create(ctx context.Context, a *domainaccount.Account) error {
 	doc, err := newAccountDoc(a)
 	if err != nil {
@@ -93,7 +90,6 @@ func (r *AccountRepository) Create(ctx context.Context, a *domainaccount.Account
 	return nil
 }
 
-// FindByID fetches an account by ID.
 func (r *AccountRepository) FindByID(ctx context.Context, id uuid.UUID) (*domainaccount.Account, error) {
 	var doc accountDoc
 	if err := r.collection.FindOne(ctx, bson.M{"_id": id.String()}).Decode(&doc); err != nil {
@@ -105,8 +101,6 @@ func (r *AccountRepository) FindByID(ctx context.Context, id uuid.UUID) (*domain
 	return doc.toDomain()
 }
 
-// ListByUser fetches every account belonging to userID, ordered by the
-// user's manual position (with name as a stable tiebreaker).
 func (r *AccountRepository) ListByUser(ctx context.Context, userID uuid.UUID) ([]*domainaccount.Account, error) {
 	opts := options.Find().SetSort(bson.D{{Key: "position", Value: 1}, {Key: "name", Value: 1}})
 	cursor, err := r.collection.Find(ctx, bson.M{"user_id": userID.String()}, opts)
@@ -130,7 +124,6 @@ func (r *AccountRepository) ListByUser(ctx context.Context, userID uuid.UUID) ([
 	return accounts, nil
 }
 
-// Update persists changes to an account.
 func (r *AccountRepository) Update(ctx context.Context, a *domainaccount.Account) error {
 	doc, err := newAccountDoc(a)
 	if err != nil {
@@ -143,7 +136,6 @@ func (r *AccountRepository) Update(ctx context.Context, a *domainaccount.Account
 	return checkMatchedCount(res)
 }
 
-// Delete permanently removes an account document.
 func (r *AccountRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	res, err := r.collection.DeleteOne(ctx, bson.M{"_id": id.String()})
 	if err != nil {

@@ -10,21 +10,15 @@ import (
 	"rinofinance-api/internal/domain/shared"
 )
 
-// UpdateSubscriptionUseCase renames and/or changes the monthly amount of
-// an existing subscription.
 type UpdateSubscriptionUseCase struct {
 	cards         domaincard.CardRepository
 	subscriptions domaincard.SubscriptionRepository
 }
 
-// NewUpdateSubscriptionUseCase wires the dependencies for
-// UpdateSubscriptionUseCase.
 func NewUpdateSubscriptionUseCase(cards domaincard.CardRepository, subscriptions domaincard.SubscriptionRepository) *UpdateSubscriptionUseCase {
 	return &UpdateSubscriptionUseCase{cards: cards, subscriptions: subscriptions}
 }
 
-// Execute loads the subscription, verifies ownership via its parent card,
-// then applies the new name and amount.
 func (uc *UpdateSubscriptionUseCase) Execute(ctx context.Context, userID, subscriptionID uuid.UUID, name string, monthlyAmount shared.Money, domain string, categoryID *uuid.UUID) (*domaincard.Subscription, error) {
 	s, err := uc.subscriptions.FindByID(ctx, subscriptionID)
 	if err != nil {

@@ -10,18 +10,14 @@ import (
 	"rinofinance-api/internal/domain/shared"
 )
 
-// ToggleAssetUseCase flips an asset's Active flag, so its balance stops
-// counting toward the total patrimony without being deleted.
 type ToggleAssetUseCase struct {
 	repo domaininvestment.Repository
 }
 
-// NewToggleAssetUseCase wires the dependencies for ToggleAssetUseCase.
 func NewToggleAssetUseCase(repo domaininvestment.Repository) *ToggleAssetUseCase {
 	return &ToggleAssetUseCase{repo: repo}
 }
 
-// Execute loads the asset, verifies ownership, and flips Active.
 func (uc *ToggleAssetUseCase) Execute(ctx context.Context, userID, assetID uuid.UUID) (*domaininvestment.Asset, error) {
 	a, err := uc.repo.FindByID(ctx, assetID)
 	if err != nil {

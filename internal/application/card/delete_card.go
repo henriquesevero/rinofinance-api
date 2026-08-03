@@ -11,12 +11,6 @@ import (
 	"rinofinance-api/internal/domain/shared"
 )
 
-// DeleteCardUseCase permanently removes a credit card along with every
-// installment purchase and subscription that belongs to it, and unlinks
-// (rather than deletes) any expense that referenced it. This mirrors what
-// a relational schema would express declaratively as ON DELETE CASCADE /
-// ON DELETE SET NULL — MongoDB enforces neither automatically, so the
-// application layer does it explicitly.
 type DeleteCardUseCase struct {
 	cards         domaincard.CardRepository
 	purchases     domaincard.InstallmentPurchaseRepository
@@ -24,7 +18,6 @@ type DeleteCardUseCase struct {
 	expenses      domainexpense.Repository
 }
 
-// NewDeleteCardUseCase wires the dependencies for DeleteCardUseCase.
 func NewDeleteCardUseCase(
 	cards domaincard.CardRepository,
 	purchases domaincard.InstallmentPurchaseRepository,
@@ -34,8 +27,6 @@ func NewDeleteCardUseCase(
 	return &DeleteCardUseCase{cards: cards, purchases: purchases, subscriptions: subscriptions, expenses: expenses}
 }
 
-// Execute verifies ownership, then deletes the card's items, unlinks its
-// expenses, and finally deletes the card itself.
 func (uc *DeleteCardUseCase) Execute(ctx context.Context, userID, cardID uuid.UUID) error {
 	c, err := uc.cards.FindByID(ctx, cardID)
 	if err != nil {

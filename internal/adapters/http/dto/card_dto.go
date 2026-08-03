@@ -10,11 +10,8 @@ import (
 	"rinofinance-api/internal/domain/shared"
 )
 
-// DateOnlyLayout is the wire format used for date-only fields
-// (FirstInstallmentDate), matching what an HTML <input type="date"> sends.
 const DateOnlyLayout = "2006-01-02"
 
-// CardRequest is the payload for creating/updating a credit card.
 type CardRequest struct {
 	Name        string       `json:"name"`
 	Color       string       `json:"color"`
@@ -25,8 +22,6 @@ type CardRequest struct {
 	ClosingDay  int          `json:"closingDay"`
 }
 
-// Details maps the request's optional visual/financial fields onto the
-// application layer's CardDetails, shared by create and update.
 func (r CardRequest) Details() appcard.CardDetails {
 	return appcard.CardDetails{
 		Color:       r.Color,
@@ -38,47 +33,35 @@ func (r CardRequest) Details() appcard.CardDetails {
 	}
 }
 
-// InstallmentPurchaseRequest is the payload for creating/updating an
-// installment purchase.
 type InstallmentPurchaseRequest struct {
 	Name                 string       `json:"name"`
 	InstallmentAmount    shared.Money `json:"installmentAmount"`
 	TotalInstallments    int          `json:"totalInstallments"`
 	FirstInstallmentDate string       `json:"firstInstallmentDate"`
-	// Domain is the merchant's website (e.g. "netflix.com"), used by the
-	// frontend to fetch a brand logo via logo.dev.
+
 	Domain     string `json:"domain"`
 	CategoryID string `json:"categoryId"`
 }
 
-// ParseFirstInstallmentDate parses the request's date-only string.
 func (r InstallmentPurchaseRequest) ParseFirstInstallmentDate() (time.Time, error) {
 	return time.Parse(DateOnlyLayout, r.FirstInstallmentDate)
 }
 
-// SubscriptionRequest is the payload for creating/updating a subscription.
 type SubscriptionRequest struct {
 	Name          string       `json:"name"`
 	MonthlyAmount shared.Money `json:"monthlyAmount"`
-	// Domain is the service's website (e.g. "netflix.com"), used by the
-	// frontend to fetch a brand logo via logo.dev.
+
 	Domain     string `json:"domain"`
 	CategoryID string `json:"categoryId"`
 }
 
-// ImportFaturaRequest is the payload for POST /api/cards/{cardId}/import:
-// the frontend parses the PDF statement client-side and sends the already
-// classified items (installment purchases and subscriptions).
 type ImportFaturaRequest struct {
 	InstallmentPurchases []ImportInstallmentItem  `json:"installmentPurchases"`
 	Subscriptions        []ImportSubscriptionItem `json:"subscriptions"`
-	// ReferenceMonth ("YYYY-MM") is the fatura's month; imported items become
-	// visible only from it onward. Empty falls back to no lower bound.
+
 	ReferenceMonth string `json:"referenceMonth"`
 }
 
-// ImportInstallmentItem is one installment purchase parsed from a
-// statement (an "avulsa" one-off is just totalInstallments = 1).
 type ImportInstallmentItem struct {
 	Name                 string       `json:"name"`
 	InstallmentAmount    shared.Money `json:"installmentAmount"`
@@ -88,7 +71,6 @@ type ImportInstallmentItem struct {
 	CategoryID           string       `json:"categoryId"`
 }
 
-// ImportSubscriptionItem is one subscription parsed from a statement.
 type ImportSubscriptionItem struct {
 	Name          string       `json:"name"`
 	MonthlyAmount shared.Money `json:"monthlyAmount"`
@@ -96,38 +78,27 @@ type ImportSubscriptionItem struct {
 	CategoryID    string       `json:"categoryId"`
 }
 
-// ImportFaturaResponse reports how many items were created.
 type ImportFaturaResponse struct {
 	InstallmentPurchases int `json:"installmentPurchases"`
 	Subscriptions        int `json:"subscriptions"`
 }
 
-// ClearCardRequest is the payload for POST /api/cards/{cardId}/clear: the
-// IDs of the installment purchases and subscriptions the user chose to
-// remove.
 type ClearCardRequest struct {
 	InstallmentPurchaseIDs []string `json:"installmentPurchaseIds"`
 	SubscriptionIDs        []string `json:"subscriptionIds"`
-	// Mode is "end" (stop from the reference month onward, keeping past
-	// months) or "delete" (permanently remove from every month). Empty
-	// defaults to "end", the non-destructive choice.
+
 	Mode string `json:"mode"`
 }
 
-// ClearCardResponse reports how many items were removed.
 type ClearCardResponse struct {
 	InstallmentPurchases int `json:"installmentPurchases"`
 	Subscriptions        int `json:"subscriptions"`
 }
 
-// ReorderCardsRequest is the payload for PUT /api/cards/order: the card
-// IDs in their new display order.
 type ReorderCardsRequest struct {
 	CardIDs []string `json:"cardIds"`
 }
 
-// CardResponse is the public representation of a CreditCard on its own
-// (without items), used for create/update/delete responses.
 type CardResponse struct {
 	ID          uuid.UUID    `json:"id"`
 	Name        string       `json:"name"`
@@ -139,7 +110,6 @@ type CardResponse struct {
 	ClosingDay  int          `json:"closingDay,omitempty"`
 }
 
-// NewCardResponse builds a CardResponse from the domain CreditCard.
 func NewCardResponse(c *domaincard.CreditCard) CardResponse {
 	return CardResponse{
 		ID:          c.ID,
@@ -153,9 +123,6 @@ func NewCardResponse(c *domaincard.CreditCard) CardResponse {
 	}
 }
 
-// InstallmentPurchaseResponse is the public representation of an
-// InstallmentPurchase, including the fields computed relative to a
-// reference month (remaining installments and remaining total).
 type InstallmentPurchaseResponse struct {
 	ID                    uuid.UUID    `json:"id"`
 	Name                  string       `json:"name"`
@@ -168,17 +135,12 @@ type InstallmentPurchaseResponse struct {
 	Flagged               bool         `json:"flagged"`
 	ExcludedFromOwed      bool         `json:"excludedFromOwed"`
 	CategoryID            *uuid.UUID   `json:"categoryId,omitempty"`
-	// CanceledFrom is the first month (YYYY-MM-DD, first of month) this item
-	// stops billing, when it was ended early. Empty when it follows its
-	// natural schedule.
+
 	CanceledFrom string `json:"canceledFrom,omitempty"`
-	// EffectiveFrom is the first month it becomes visible (set on import), or
-	// empty when visible per its natural schedule.
+
 	EffectiveFrom string `json:"effectiveFrom,omitempty"`
 }
 
-// NewInstallmentPurchaseResponse builds an InstallmentPurchaseResponse,
-// computing remaining installments/total as of reference.
 func NewInstallmentPurchaseResponse(p *domaincard.InstallmentPurchase, reference time.Time) InstallmentPurchaseResponse {
 	return InstallmentPurchaseResponse{
 		ID:                    p.ID,
@@ -197,8 +159,6 @@ func NewInstallmentPurchaseResponse(p *domaincard.InstallmentPurchase, reference
 	}
 }
 
-// formatMonthPtr renders an optional month marker as YYYY-MM-DD, or "" when
-// nil — used for the CanceledFrom field on card items.
 func formatMonthPtr(t *time.Time) string {
 	if t == nil {
 		return ""
@@ -206,7 +166,6 @@ func formatMonthPtr(t *time.Time) string {
 	return t.Format(DateOnlyLayout)
 }
 
-// SubscriptionResponse is the public representation of a Subscription.
 type SubscriptionResponse struct {
 	ID            uuid.UUID    `json:"id"`
 	Name          string       `json:"name"`
@@ -217,8 +176,6 @@ type SubscriptionResponse struct {
 	EffectiveFrom string       `json:"effectiveFrom,omitempty"`
 }
 
-// NewSubscriptionResponse builds a SubscriptionResponse from the domain
-// Subscription.
 func NewSubscriptionResponse(s *domaincard.Subscription) SubscriptionResponse {
 	return SubscriptionResponse{
 		ID:            s.ID,
@@ -231,8 +188,6 @@ func NewSubscriptionResponse(s *domaincard.Subscription) SubscriptionResponse {
 	}
 }
 
-// CardOverviewResponse is one card's full Aba 2 section: its items and
-// current-month total.
 type CardOverviewResponse struct {
 	ID                   uuid.UUID                     `json:"id"`
 	Name                 string                        `json:"name"`
@@ -247,15 +202,11 @@ type CardOverviewResponse struct {
 	MonthlyTotal         shared.Money                  `json:"monthlyTotal"`
 }
 
-// CardsOverviewResponse is the full payload for GET /api/cards: every
-// card's overview plus the combined "Total Geral".
 type CardsOverviewResponse struct {
 	Cards      []CardOverviewResponse `json:"cards"`
 	GrandTotal shared.Money           `json:"grandTotal"`
 }
 
-// NewCardsOverviewResponse builds the full Aba 2 payload from the
-// application layer's CardOverview slice and grand total.
 func NewCardsOverviewResponse(overviews []appcard.CardOverview, grandTotal shared.Money, reference time.Time) CardsOverviewResponse {
 	cards := make([]CardOverviewResponse, 0, len(overviews))
 	for _, o := range overviews {

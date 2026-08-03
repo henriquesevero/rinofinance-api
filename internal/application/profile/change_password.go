@@ -10,21 +10,15 @@ import (
 	domainuser "rinofinance-api/internal/domain/user"
 )
 
-// ChangePasswordUseCase updates the account's password after verifying
-// the current one.
 type ChangePasswordUseCase struct {
 	users  domainuser.Repository
 	hasher appauth.PasswordHasher
 }
 
-// NewChangePasswordUseCase wires the dependencies for
-// ChangePasswordUseCase.
 func NewChangePasswordUseCase(users domainuser.Repository, hasher appauth.PasswordHasher) *ChangePasswordUseCase {
 	return &ChangePasswordUseCase{users: users, hasher: hasher}
 }
 
-// Execute verifies currentPassword, validates newPassword's strength,
-// hashes it and persists it.
 func (uc *ChangePasswordUseCase) Execute(ctx context.Context, userID uuid.UUID, currentPassword, newPassword string) error {
 	if len(newPassword) < 8 {
 		return appauth.ErrPasswordTooShort

@@ -15,12 +15,10 @@ import (
 	"rinofinance-api/internal/domain/shared"
 )
 
-// CardRepository implements domain/card.CardRepository against MongoDB.
 type CardRepository struct {
 	collection *mongo.Collection
 }
 
-// NewCardRepository wires a CardRepository to a database handle.
 func NewCardRepository(db *mongo.Database) *CardRepository {
 	return &CardRepository{collection: db.Collection(creditCardsCollection)}
 }
@@ -90,7 +88,6 @@ func (d creditCardDoc) toDomain() (*domaincard.CreditCard, error) {
 	}, nil
 }
 
-// Create inserts a new credit card document.
 func (r *CardRepository) Create(ctx context.Context, c *domaincard.CreditCard) error {
 	doc, err := newCreditCardDoc(c)
 	if err != nil {
@@ -102,7 +99,6 @@ func (r *CardRepository) Create(ctx context.Context, c *domaincard.CreditCard) e
 	return nil
 }
 
-// FindByID fetches a credit card by ID.
 func (r *CardRepository) FindByID(ctx context.Context, id uuid.UUID) (*domaincard.CreditCard, error) {
 	var doc creditCardDoc
 	if err := r.collection.FindOne(ctx, bson.M{"_id": id.String()}).Decode(&doc); err != nil {
@@ -114,8 +110,6 @@ func (r *CardRepository) FindByID(ctx context.Context, id uuid.UUID) (*domaincar
 	return doc.toDomain()
 }
 
-// ListByUser fetches every credit card belonging to userID, ordered by
-// the user's manual position (with created_at as a stable tiebreaker).
 func (r *CardRepository) ListByUser(ctx context.Context, userID uuid.UUID) ([]*domaincard.CreditCard, error) {
 	opts := options.Find().SetSort(bson.D{{Key: "position", Value: 1}, {Key: "created_at", Value: 1}})
 	cursor, err := r.collection.Find(ctx, bson.M{"user_id": userID.String()}, opts)
@@ -139,7 +133,6 @@ func (r *CardRepository) ListByUser(ctx context.Context, userID uuid.UUID) ([]*d
 	return cards, nil
 }
 
-// Update persists changes to a credit card's name.
 func (r *CardRepository) Update(ctx context.Context, c *domaincard.CreditCard) error {
 	doc, err := newCreditCardDoc(c)
 	if err != nil {
@@ -152,10 +145,6 @@ func (r *CardRepository) Update(ctx context.Context, c *domaincard.CreditCard) e
 	return checkMatchedCount(res)
 }
 
-// Delete permanently removes a credit card document. MongoDB has no
-// foreign key cascade, so application/card.DeleteCardUseCase is
-// responsible for removing the card's installment purchases and
-// subscriptions and unlinking its expenses before calling this method.
 func (r *CardRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	res, err := r.collection.DeleteOne(ctx, bson.M{"_id": id.String()})
 	if err != nil {

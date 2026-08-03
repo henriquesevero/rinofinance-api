@@ -11,20 +11,15 @@ import (
 	"rinofinance-api/internal/domain/shared"
 )
 
-// UpdateInstallmentPurchaseUseCase edits an existing installment purchase.
 type UpdateInstallmentPurchaseUseCase struct {
 	cards     domaincard.CardRepository
 	purchases domaincard.InstallmentPurchaseRepository
 }
 
-// NewUpdateInstallmentPurchaseUseCase wires the dependencies for
-// UpdateInstallmentPurchaseUseCase.
 func NewUpdateInstallmentPurchaseUseCase(cards domaincard.CardRepository, purchases domaincard.InstallmentPurchaseRepository) *UpdateInstallmentPurchaseUseCase {
 	return &UpdateInstallmentPurchaseUseCase{cards: cards, purchases: purchases}
 }
 
-// Execute loads the purchase, verifies (via its parent card) that it
-// belongs to userID, then replaces its fields.
 func (uc *UpdateInstallmentPurchaseUseCase) Execute(
 	ctx context.Context,
 	userID, purchaseID uuid.UUID,
@@ -51,8 +46,7 @@ func (uc *UpdateInstallmentPurchaseUseCase) Execute(
 	rebuilt.CreatedAt = p.CreatedAt
 	rebuilt.SetDomain(domain)
 	rebuilt.SetCategory(categoryID)
-	// Editing an installment purchase must not clear an attention flag the
-	// user set earlier, so carry it over from the stored purchase.
+
 	rebuilt.SetFlagged(p.Flagged)
 
 	if err := uc.purchases.Update(ctx, rebuilt); err != nil {

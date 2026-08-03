@@ -1,7 +1,3 @@
-// Command api is the RinoFinance HTTP server entrypoint: it loads
-// configuration, connects to MongoDB, ensures indexes exist, wires every
-// hexagonal layer (repositories -> use cases -> handlers) and serves the
-// REST API.
 package main
 
 import (
@@ -58,7 +54,6 @@ func main() {
 	}
 	log.Println("índices do MongoDB garantidos com sucesso")
 
-	// Repositories (secondary/driven adapters).
 	userRepo := mongodb.NewUserRepository(db)
 	incomeRepo := mongodb.NewIncomeRepository(db)
 	expenseRepo := mongodb.NewExpenseRepository(db)
@@ -74,11 +69,9 @@ func main() {
 	wishlistSectionRepo := mongodb.NewWishlistSectionRepository(db)
 	wishlistItemRepo := mongodb.NewWishlistItemRepository(db)
 
-	// Technical adapters used by the auth use cases.
 	hasher := pkgauth.BcryptHasher{}
 	tokens := pkgauth.NewTokenIssuer(cfg.JWTSecret, cfg.JWTTTL)
 
-	// Use cases (application layer).
 	registerUser := appauth.NewRegisterUserUseCase(userRepo, hasher, cfg.RegistrationCode)
 	loginUser := appauth.NewLoginUserUseCase(userRepo, hasher, tokens)
 
@@ -91,7 +84,6 @@ func main() {
 	shareData := appprofile.NewShareDataUseCase(userRepo, hasher)
 	stopSharing := appprofile.NewStopSharingUseCase(userRepo)
 
-	// Resolves the effective data owner for a user (self, or a shared account).
 	resolveDataOwner := func(id uuid.UUID) uuid.UUID {
 		if u, err := userRepo.FindByID(context.Background(), id); err == nil && u.DataOwnerID != nil {
 			return *u.DataOwnerID
@@ -167,7 +159,6 @@ func main() {
 	getMonthlySummary := appdashboard.NewGetMonthlySummaryUseCase(incomeRepo, expenseRepo, cardAmountResolver, accountLinkResolver, accountBalanceResolver, monthlyStatusRepo)
 	getAnnualSummary := appdashboard.NewGetAnnualSummaryUseCase(incomeRepo, expenseRepo, accountBalanceResolver, installmentRepo, subscriptionRepo, accountPurchaseRepo, monthlyStatusRepo)
 
-	// Handlers (primary/driving adapter).
 	handlers := rest.Handlers{
 		Auth:    handler.NewAuthHandler(registerUser, loginUser),
 		Account: handler.NewAccountHandler(updateProfile, changeEmail, changePassword, deleteAccount, shareData, stopSharing),
@@ -212,8 +203,6 @@ func main() {
 		}
 	}()
 
-	// Graceful shutdown: Railway sends SIGTERM before killing the
-	// container on redeploy, so in-flight requests get a chance to finish.
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
 	<-stop

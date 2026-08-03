@@ -8,8 +8,6 @@ import (
 	"rinofinance-api/internal/adapters/http/dto"
 )
 
-// ExpenseHandler exposes CRUD, toggle and card-linkage endpoints for
-// Aba 1's "Saídas".
 type ExpenseHandler struct {
 	create            *appexpense.CreateExpenseUseCase
 	createCardLinked  *appexpense.CreateCardLinkedExpenseUseCase
@@ -22,7 +20,6 @@ type ExpenseHandler struct {
 	reorder           *appexpense.ReorderExpensesUseCase
 }
 
-// NewExpenseHandler wires the dependencies for ExpenseHandler.
 func NewExpenseHandler(
 	create *appexpense.CreateExpenseUseCase,
 	createCardLinked *appexpense.CreateCardLinkedExpenseUseCase,
@@ -47,7 +44,6 @@ func NewExpenseHandler(
 	}
 }
 
-// CreateAccountLinked handles POST /api/expenses/account-linked.
 func (h *ExpenseHandler) CreateAccountLinked(w http.ResponseWriter, r *http.Request) {
 	userID, ok := requireUserID(w, r)
 	if !ok {
@@ -71,7 +67,6 @@ func (h *ExpenseHandler) CreateAccountLinked(w http.ResponseWriter, r *http.Requ
 	writeJSON(w, http.StatusCreated, dto.NewExpenseResponse(e))
 }
 
-// Reorder handles PUT /api/expenses/order.
 func (h *ExpenseHandler) Reorder(w http.ResponseWriter, r *http.Request) {
 	userID, ok := requireUserID(w, r)
 	if !ok {
@@ -94,7 +89,6 @@ func (h *ExpenseHandler) Reorder(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-// List handles GET /api/expenses?month=YYYY-MM.
 func (h *ExpenseHandler) List(w http.ResponseWriter, r *http.Request) {
 	userID, ok := requireUserID(w, r)
 	if !ok {
@@ -114,7 +108,6 @@ func (h *ExpenseHandler) List(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, dto.NewExpenseResponseList(expenses))
 }
 
-// Create handles POST /api/expenses (standalone expense).
 func (h *ExpenseHandler) Create(w http.ResponseWriter, r *http.Request) {
 	userID, ok := requireUserID(w, r)
 	if !ok {
@@ -140,7 +133,6 @@ func (h *ExpenseHandler) Create(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusCreated, dto.NewExpenseResponse(e))
 }
 
-// CreateCardLinked handles POST /api/expenses/card-linked.
 func (h *ExpenseHandler) CreateCardLinked(w http.ResponseWriter, r *http.Request) {
 	userID, ok := requireUserID(w, r)
 	if !ok {
@@ -166,7 +158,6 @@ func (h *ExpenseHandler) CreateCardLinked(w http.ResponseWriter, r *http.Request
 	writeJSON(w, http.StatusCreated, dto.NewExpenseResponse(e))
 }
 
-// Update handles PUT /api/expenses/{id}.
 func (h *ExpenseHandler) Update(w http.ResponseWriter, r *http.Request) {
 	userID, ok := requireUserID(w, r)
 	if !ok {
@@ -196,7 +187,6 @@ func (h *ExpenseHandler) Update(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, dto.NewExpenseResponse(e))
 }
 
-// Toggle handles PATCH /api/expenses/{id}/toggle.
 func (h *ExpenseHandler) Toggle(w http.ResponseWriter, r *http.Request) {
 	userID, ok := requireUserID(w, r)
 	if !ok {
@@ -215,7 +205,6 @@ func (h *ExpenseHandler) Toggle(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, dto.NewExpenseResponse(e))
 }
 
-// TogglePaid handles PATCH /api/expenses/{id}/paid.
 func (h *ExpenseHandler) TogglePaid(w http.ResponseWriter, r *http.Request) {
 	userID, ok := requireUserID(w, r)
 	if !ok {
@@ -240,7 +229,6 @@ func (h *ExpenseHandler) TogglePaid(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, dto.NewExpenseResponse(e))
 }
 
-// Delete handles DELETE /api/expenses/{id}.
 func (h *ExpenseHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	userID, ok := requireUserID(w, r)
 	if !ok {

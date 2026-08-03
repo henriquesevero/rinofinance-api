@@ -9,12 +9,6 @@ import (
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
 
-// EnsureIndexes creates every index the application relies on. MongoDB is
-// schemaless, so this replaces what a relational schema would express as
-// migrations: the unique index on users.email enforces the same
-// constraint a SQL UNIQUE column would, and the user_id/card_id indexes
-// keep the per-user and per-card list queries fast. It is idempotent —
-// safe to call on every boot.
 func EnsureIndexes(ctx context.Context, db *mongo.Database) error {
 	if _, err := db.Collection(usersCollection).Indexes().CreateOne(ctx, mongo.IndexModel{
 		Keys:    bson.D{{Key: "email", Value: 1}},
@@ -55,7 +49,6 @@ func EnsureIndexes(ctx context.Context, db *mongo.Database) error {
 		return err
 	}
 
-	// Wishlist docs created before the "kind" split default to "wishlist".
 	for _, col := range []string{wishlistSectionsCollection, wishlistItemsCollection} {
 		if _, err := db.Collection(col).UpdateMany(
 			ctx,
@@ -69,11 +62,6 @@ func EnsureIndexes(ctx context.Context, db *mongo.Database) error {
 	return nil
 }
 
-// backfillPositions gives every document created before manual ordering
-// existed a real position of 0. Without this, legacy docs have no position
-// field (which MongoDB sorts as null, i.e. before 0), so editing one would
-// write position 0 and jump it past the un-migrated ones. Idempotent:
-// once a doc has the field it is skipped.
 func backfillPositions(ctx context.Context, db *mongo.Database) error {
 	orderedCollections := []string{
 		incomesCollection,

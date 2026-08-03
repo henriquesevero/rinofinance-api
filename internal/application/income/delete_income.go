@@ -10,18 +10,14 @@ import (
 	"rinofinance-api/internal/domain/shared"
 )
 
-// DeleteIncomeUseCase permanently removes an income line.
 type DeleteIncomeUseCase struct {
 	repo domainincome.Repository
 }
 
-// NewDeleteIncomeUseCase wires the dependencies for DeleteIncomeUseCase.
 func NewDeleteIncomeUseCase(repo domainincome.Repository) *DeleteIncomeUseCase {
 	return &DeleteIncomeUseCase{repo: repo}
 }
 
-// Execute verifies ownership before deleting, so a user can never delete
-// another account's income by guessing its ID.
 func (uc *DeleteIncomeUseCase) Execute(ctx context.Context, userID, incomeID uuid.UUID) error {
 	inc, err := uc.repo.FindByID(ctx, incomeID)
 	if err != nil {

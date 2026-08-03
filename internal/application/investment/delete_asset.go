@@ -10,19 +10,15 @@ import (
 	"rinofinance-api/internal/domain/shared"
 )
 
-// DeleteAssetUseCase permanently removes an asset and its proventos.
 type DeleteAssetUseCase struct {
 	assets    domaininvestment.Repository
 	proventos domaininvestment.ProventoRepository
 }
 
-// NewDeleteAssetUseCase wires the dependencies for DeleteAssetUseCase.
 func NewDeleteAssetUseCase(assets domaininvestment.Repository, proventos domaininvestment.ProventoRepository) *DeleteAssetUseCase {
 	return &DeleteAssetUseCase{assets: assets, proventos: proventos}
 }
 
-// Execute verifies ownership before deleting the asset and every provento
-// tied to it.
 func (uc *DeleteAssetUseCase) Execute(ctx context.Context, userID, assetID uuid.UUID) error {
 	a, err := uc.assets.FindByID(ctx, assetID)
 	if err != nil {

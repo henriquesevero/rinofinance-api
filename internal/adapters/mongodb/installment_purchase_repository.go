@@ -15,14 +15,10 @@ import (
 	"rinofinance-api/internal/domain/shared"
 )
 
-// InstallmentPurchaseRepository implements
-// domain/card.InstallmentPurchaseRepository against MongoDB.
 type InstallmentPurchaseRepository struct {
 	collection *mongo.Collection
 }
 
-// NewInstallmentPurchaseRepository wires an InstallmentPurchaseRepository
-// to a database handle.
 func NewInstallmentPurchaseRepository(db *mongo.Database) *InstallmentPurchaseRepository {
 	return &InstallmentPurchaseRepository{collection: db.Collection(installmentPurchasesCollection)}
 }
@@ -105,7 +101,6 @@ func (d installmentPurchaseDoc) toDomain() (*domaincard.InstallmentPurchase, err
 	}, nil
 }
 
-// Create inserts a new installment purchase document.
 func (r *InstallmentPurchaseRepository) Create(ctx context.Context, p *domaincard.InstallmentPurchase) error {
 	doc, err := newInstallmentPurchaseDoc(p)
 	if err != nil {
@@ -117,7 +112,6 @@ func (r *InstallmentPurchaseRepository) Create(ctx context.Context, p *domaincar
 	return nil
 }
 
-// FindByID fetches an installment purchase by ID.
 func (r *InstallmentPurchaseRepository) FindByID(ctx context.Context, id uuid.UUID) (*domaincard.InstallmentPurchase, error) {
 	var doc installmentPurchaseDoc
 	if err := r.collection.FindOne(ctx, bson.M{"_id": id.String()}).Decode(&doc); err != nil {
@@ -129,10 +123,20 @@ func (r *InstallmentPurchaseRepository) FindByID(ctx context.Context, id uuid.UU
 	return doc.toDomain()
 }
 
-// ListByCard fetches every installment purchase belonging to a card.
 func (r *InstallmentPurchaseRepository) ListByCard(ctx context.Context, cardID uuid.UUID) ([]*domaincard.InstallmentPurchase, error) {
+	return r.list(ctx, bson.M{"card_id": cardID.String()})
+}
+
+func (r *InstallmentPurchaseRepository) ListByCards(ctx context.Context, cardIDs []uuid.UUID) ([]*domaincard.InstallmentPurchase, error) {
+	if len(cardIDs) == 0 {
+		return nil, nil
+	}
+	return r.list(ctx, bson.M{"card_id": bson.M{"$in": stringIDs(cardIDs)}})
+}
+
+func (r *InstallmentPurchaseRepository) list(ctx context.Context, filter bson.M) ([]*domaincard.InstallmentPurchase, error) {
 	opts := options.Find().SetSort(bson.D{{Key: "position", Value: 1}, {Key: "created_at", Value: 1}})
-	cursor, err := r.collection.Find(ctx, bson.M{"card_id": cardID.String()}, opts)
+	cursor, err := r.collection.Find(ctx, filter, opts)
 	if err != nil {
 		return nil, fmt.Errorf("erro ao listar compras parceladas: %w", err)
 	}
@@ -153,7 +157,6 @@ func (r *InstallmentPurchaseRepository) ListByCard(ctx context.Context, cardID u
 	return purchases, nil
 }
 
-// Update persists changes to an installment purchase's fields.
 func (r *InstallmentPurchaseRepository) Update(ctx context.Context, p *domaincard.InstallmentPurchase) error {
 	doc, err := newInstallmentPurchaseDoc(p)
 	if err != nil {
@@ -166,7 +169,6 @@ func (r *InstallmentPurchaseRepository) Update(ctx context.Context, p *domaincar
 	return checkMatchedCount(res)
 }
 
-// Delete permanently removes an installment purchase document.
 func (r *InstallmentPurchaseRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	res, err := r.collection.DeleteOne(ctx, bson.M{"_id": id.String()})
 	if err != nil {

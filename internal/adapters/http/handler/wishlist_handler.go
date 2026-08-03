@@ -10,18 +10,14 @@ import (
 	"rinofinance-api/internal/pkg/unfurl"
 )
 
-// WishlistHandler exposes the "itens para comprar" endpoints: sections and
-// the items inside them.
 type WishlistHandler struct {
 	svc *appwishlist.Service
 }
 
-// NewWishlistHandler wires the dependencies for WishlistHandler.
 func NewWishlistHandler(svc *appwishlist.Service) *WishlistHandler {
 	return &WishlistHandler{svc: svc}
 }
 
-// Overview handles GET /api/wishlist.
 func (h *WishlistHandler) Overview(w http.ResponseWriter, r *http.Request) {
 	userID, ok := requireUserID(w, r)
 	if !ok {
@@ -35,8 +31,6 @@ func (h *WishlistHandler) Overview(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, dto.NewWishlistOverviewResponse(overview))
 }
 
-// Unfurl handles GET /api/wishlist/unfurl?url=... — fetches a store page and
-// returns its product image/title/price so the item form can auto-fill.
 func (h *WishlistHandler) Unfurl(w http.ResponseWriter, r *http.Request) {
 	if _, ok := requireUserID(w, r); !ok {
 		return
@@ -46,11 +40,10 @@ func (h *WishlistHandler) Unfurl(w http.ResponseWriter, r *http.Request) {
 		writeError(w, errBadRequest)
 		return
 	}
-	// Any other failure is treated as "nothing found" — return empty fields.
+
 	writeJSON(w, http.StatusOK, meta)
 }
 
-// CreateSection handles POST /api/wishlist/sections.
 func (h *WishlistHandler) CreateSection(w http.ResponseWriter, r *http.Request) {
 	userID, ok := requireUserID(w, r)
 	if !ok {
@@ -69,7 +62,6 @@ func (h *WishlistHandler) CreateSection(w http.ResponseWriter, r *http.Request) 
 	writeJSON(w, http.StatusCreated, dto.NewWishlistSectionResponse(s))
 }
 
-// UpdateSection handles PUT /api/wishlist/sections/{id}.
 func (h *WishlistHandler) UpdateSection(w http.ResponseWriter, r *http.Request) {
 	userID, ok := requireUserID(w, r)
 	if !ok {
@@ -92,7 +84,6 @@ func (h *WishlistHandler) UpdateSection(w http.ResponseWriter, r *http.Request) 
 	writeJSON(w, http.StatusOK, dto.NewWishlistSectionResponse(s))
 }
 
-// DeleteSection handles DELETE /api/wishlist/sections/{id}.
 func (h *WishlistHandler) DeleteSection(w http.ResponseWriter, r *http.Request) {
 	userID, ok := requireUserID(w, r)
 	if !ok {
@@ -109,7 +100,6 @@ func (h *WishlistHandler) DeleteSection(w http.ResponseWriter, r *http.Request) 
 	w.WriteHeader(http.StatusNoContent)
 }
 
-// CreateItem handles POST /api/wishlist/items.
 func (h *WishlistHandler) CreateItem(w http.ResponseWriter, r *http.Request) {
 	userID, ok := requireUserID(w, r)
 	if !ok {
@@ -133,7 +123,6 @@ func (h *WishlistHandler) CreateItem(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusCreated, dto.NewWishlistItemResponse(item))
 }
 
-// UpdateItem handles PUT /api/wishlist/items/{id}.
 func (h *WishlistHandler) UpdateItem(w http.ResponseWriter, r *http.Request) {
 	userID, ok := requireUserID(w, r)
 	if !ok {
@@ -161,7 +150,6 @@ func (h *WishlistHandler) UpdateItem(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, dto.NewWishlistItemResponse(item))
 }
 
-// ReorderItems handles PUT /api/wishlist/items/order.
 func (h *WishlistHandler) ReorderItems(w http.ResponseWriter, r *http.Request) {
 	userID, ok := requireUserID(w, r)
 	if !ok {
@@ -184,7 +172,6 @@ func (h *WishlistHandler) ReorderItems(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-// DeleteItem handles DELETE /api/wishlist/items/{id}.
 func (h *WishlistHandler) DeleteItem(w http.ResponseWriter, r *http.Request) {
 	userID, ok := requireUserID(w, r)
 	if !ok {
@@ -201,8 +188,6 @@ func (h *WishlistHandler) DeleteItem(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-// wishlistKind reads the list kind from the query string, defaulting to
-// "wishlist" (itens a comprar); "owned" selects the possessions list.
 func wishlistKind(r *http.Request) string {
 	if r.URL.Query().Get("kind") == "owned" {
 		return "owned"
@@ -210,8 +195,6 @@ func wishlistKind(r *http.Request) string {
 	return "wishlist"
 }
 
-// itemInput maps a request onto the application ItemInput, resolving the
-// optional section id.
 func itemInput(req dto.WishlistItemRequest) (appwishlist.ItemInput, error) {
 	sectionID, err := parseOptionalUUID(req.SectionID)
 	if err != nil {

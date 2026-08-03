@@ -19,8 +19,6 @@ import (
 
 const uncategorizedKey = "__none__"
 
-// AnnualMonth holds one month's income/expense totals in both lenses:
-// "realized" (only received/paid lines) and "planned" (every active line).
 type AnnualMonth struct {
 	Index           int
 	IncomeRealized  shared.Money
@@ -29,15 +27,11 @@ type AnnualMonth struct {
 	ExpensePlanned  shared.Money
 }
 
-// AnnualCategoryTotal is a category's summed amount across the whole year.
 type AnnualCategoryTotal struct {
 	ID    string
 	Total shared.Money
 }
 
-// AnnualSummary is the full year computed in a single pass, so Aba "Visão
-// anual" needs just one request and switching realized/planned is free on the
-// client.
 type AnnualSummary struct {
 	Year                      int
 	Months                    []AnnualMonth
@@ -47,11 +41,6 @@ type AnnualSummary struct {
 	IncomeCategoriesPlanned   []AnnualCategoryTotal
 }
 
-// GetAnnualSummaryUseCase computes all 12 monthly aggregates of a year for a
-// user. Unlike calling GetMonthlySummary 12×, it lists incomes/expenses and
-// each linked card/account's source rows only once, then derives every month's
-// card/account totals in memory — turning ~12×(2N) DB queries into a constant
-// handful.
 type GetAnnualSummaryUseCase struct {
 	incomes        domainincome.Repository
 	expenses       domainexpense.Repository
@@ -62,7 +51,6 @@ type GetAnnualSummaryUseCase struct {
 	status         monthlystatus.Repository
 }
 
-// NewGetAnnualSummaryUseCase wires the dependencies for GetAnnualSummaryUseCase.
 func NewGetAnnualSummaryUseCase(
 	incomes domainincome.Repository,
 	expenses domainexpense.Repository,
@@ -88,14 +76,12 @@ type cardSource struct {
 	subscriptions []*domaincard.Subscription
 }
 
-// Execute builds the AnnualSummary for year.
 func (uc *GetAnnualSummaryUseCase) Execute(ctx context.Context, userID uuid.UUID, year int) (*AnnualSummary, error) {
 	incomes, err := uc.incomes.ListByUser(ctx, userID)
 	if err != nil {
 		return nil, fmt.Errorf("erro ao listar entradas: %w", err)
 	}
-	// Income amounts come from the account's live balance — the same for every
-	// month — so resolve once up front.
+
 	if err := uc.incomeResolver.ResolveAll(ctx, incomes); err != nil {
 		return nil, err
 	}
@@ -105,8 +91,6 @@ func (uc *GetAnnualSummaryUseCase) Execute(ctx context.Context, userID uuid.UUID
 		return nil, fmt.Errorf("erro ao listar saídas: %w", err)
 	}
 
-	// Preload each linked card's and account's source rows once; the per-month
-	// totals are then pure in-memory computations.
 	cards := map[uuid.UUID]cardSource{}
 	accounts := map[uuid.UUID][]*domainaccount.Purchase{}
 	for _, e := range expenses {
@@ -155,7 +139,6 @@ func (uc *GetAnnualSummaryUseCase) Execute(ctx context.Context, userID uuid.UUID
 			return nil, err
 		}
 
-		// Recompute the card/account-linked expense amounts for this month.
 		for _, e := range expenses {
 			switch {
 			case e.IsCardLinked():
@@ -214,8 +197,6 @@ func (uc *GetAnnualSummaryUseCase) Execute(ctx context.Context, userID uuid.UUID
 	}, nil
 }
 
-// moneyMap accumulates money by category id, defaulting a nil category to the
-// "__none__" bucket, and can rank its entries by descending total.
 type moneyMap map[string]shared.Money
 
 func (m moneyMap) add(categoryID *uuid.UUID, amount shared.Money) {
@@ -236,7 +217,7 @@ func (m moneyMap) ranked() []AnnualCategoryTotal {
 		out = append(out, AnnualCategoryTotal{ID: id, Total: total})
 	}
 	sort.Slice(out, func(i, j int) bool {
-		// Descending: i before j when total_i > total_j (i.e. total_j - total_i < 0).
+
 		return out[j].Total.Sub(out[i].Total).IsNegative()
 	})
 	return out

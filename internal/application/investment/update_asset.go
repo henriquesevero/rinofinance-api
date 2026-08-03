@@ -10,17 +10,14 @@ import (
 	"rinofinance-api/internal/domain/shared"
 )
 
-// UpdateAssetUseCase updates every editable field of an existing asset.
 type UpdateAssetUseCase struct {
 	repo domaininvestment.Repository
 }
 
-// NewUpdateAssetUseCase wires the dependencies for UpdateAssetUseCase.
 func NewUpdateAssetUseCase(repo domaininvestment.Repository) *UpdateAssetUseCase {
 	return &UpdateAssetUseCase{repo: repo}
 }
 
-// Execute loads the asset, verifies ownership, then applies the new input.
 func (uc *UpdateAssetUseCase) Execute(ctx context.Context, userID, assetID uuid.UUID, in domaininvestment.AssetInput) (*domaininvestment.Asset, error) {
 	a, err := uc.repo.FindByID(ctx, assetID)
 	if err != nil {

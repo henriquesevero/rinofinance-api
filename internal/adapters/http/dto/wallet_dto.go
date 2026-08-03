@@ -10,8 +10,6 @@ import (
 	"rinofinance-api/internal/domain/shared"
 )
 
-// AccountRequest is the payload for creating/updating a bank/wallet
-// account (distinct from the user-profile "account" endpoints).
 type AccountRequest struct {
 	Name     string       `json:"name"`
 	Color    string       `json:"color"`
@@ -19,8 +17,6 @@ type AccountRequest struct {
 	Balance  shared.Money `json:"balance"`
 }
 
-// AccountPurchaseRequest is the payload for creating/updating a debit
-// purchase under an account.
 type AccountPurchaseRequest struct {
 	Name       string       `json:"name"`
 	Amount     shared.Money `json:"amount"`
@@ -28,12 +24,10 @@ type AccountPurchaseRequest struct {
 	CategoryID string       `json:"categoryId"`
 }
 
-// ParseDate parses the request's date-only string.
 func (r AccountPurchaseRequest) ParseDate() (time.Time, error) {
 	return time.Parse(DateOnlyLayout, r.Date)
 }
 
-// AccountPurchaseResponse is the public representation of a debit purchase.
 type AccountPurchaseResponse struct {
 	ID         uuid.UUID    `json:"id"`
 	Name       string       `json:"name"`
@@ -42,7 +36,6 @@ type AccountPurchaseResponse struct {
 	CategoryID *uuid.UUID   `json:"categoryId,omitempty"`
 }
 
-// NewAccountPurchaseResponse builds a response from the domain Purchase.
 func NewAccountPurchaseResponse(p *domainaccount.Purchase) AccountPurchaseResponse {
 	return AccountPurchaseResponse{
 		ID:         p.ID,
@@ -53,8 +46,6 @@ func NewAccountPurchaseResponse(p *domainaccount.Purchase) AccountPurchaseRespon
 	}
 }
 
-// AccountResponse is one account's overview: its current balance, image,
-// debit purchases and the current month's debit total.
 type AccountResponse struct {
 	ID                uuid.UUID                 `json:"id"`
 	Name              string                    `json:"name"`
@@ -65,8 +56,6 @@ type AccountResponse struct {
 	Purchases         []AccountPurchaseResponse `json:"purchases"`
 }
 
-// NewAccountResponse builds an AccountResponse from an application-layer
-// AccountOverview.
 func NewAccountResponse(o appaccount.AccountOverview) AccountResponse {
 	purchases := make([]AccountPurchaseResponse, 0, len(o.Purchases))
 	for _, p := range o.Purchases {
@@ -83,8 +72,6 @@ func NewAccountResponse(o appaccount.AccountOverview) AccountResponse {
 	}
 }
 
-// NewCreatedAccountResponse builds a response for create/update, where the
-// derived figures aren't recomputed (the client refetches the overview).
 func NewCreatedAccountResponse(a *domainaccount.Account) AccountResponse {
 	return AccountResponse{
 		ID:                a.ID,
@@ -97,13 +84,11 @@ func NewCreatedAccountResponse(a *domainaccount.Account) AccountResponse {
 	}
 }
 
-// AccountsOverviewResponse is the full payload for GET /api/accounts.
 type AccountsOverviewResponse struct {
 	Accounts     []AccountResponse `json:"accounts"`
 	TotalBalance shared.Money      `json:"totalBalance"`
 }
 
-// NewAccountsOverviewResponse builds the accounts overview payload.
 func NewAccountsOverviewResponse(overviews []appaccount.AccountOverview, totalBalance shared.Money) AccountsOverviewResponse {
 	out := make([]AccountResponse, 0, len(overviews))
 	for _, o := range overviews {

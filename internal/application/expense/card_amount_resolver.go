@@ -1,5 +1,3 @@
-// Package expense orchestrates CRUD, activation and card-linkage use
-// cases for Aba 1's "Saídas".
 package expense
 
 import (
@@ -7,53 +5,65 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/google/uuid"
+
 	domaincard "rinofinance-api/internal/domain/card"
 	domainexpense "rinofinance-api/internal/domain/expense"
 )
 
-// CardAmountResolver refreshes a card-linked expense's in-memory Amount
-// from its credit card's live current-month total (installment purchases
-// + subscriptions). It never persists the change itself — callers decide
-// whether the recomputed value should be written back, keeping this a
-// pure read-time concern reusable by both the expense listing and the
-// dashboard summary use cases.
 type CardAmountResolver struct {
 	purchases     domaincard.InstallmentPurchaseRepository
 	subscriptions domaincard.SubscriptionRepository
 }
 
-// NewCardAmountResolver wires the dependencies for CardAmountResolver.
 func NewCardAmountResolver(purchases domaincard.InstallmentPurchaseRepository, subscriptions domaincard.SubscriptionRepository) *CardAmountResolver {
 	return &CardAmountResolver{purchases: purchases, subscriptions: subscriptions}
 }
 
-// Resolve is a no-op for standalone expenses. For card-linked expenses it
-// recomputes the linked card's monthly total for reference and syncs it
-// onto e in memory.
-func (r *CardAmountResolver) Resolve(ctx context.Context, e *domainexpense.Expense, reference time.Time) error {
-	if !e.IsCardLinked() {
+func (r *CardAmountResolver) ResolveAll(ctx context.Context, expenses []*domainexpense.Expense, reference time.Time) error {
+	cardIDs := distinctCardIDs(expenses)
+	if len(cardIDs) == 0 {
 		return nil
 	}
 
-	purchases, err := r.purchases.ListByCard(ctx, *e.CardID)
+	purchases, err := r.purchases.ListByCards(ctx, cardIDs)
 	if err != nil {
-		return fmt.Errorf("erro ao listar parcelas do cartão vinculado: %w", err)
+		return fmt.Errorf("erro ao listar parcelas dos cartões vinculados: %w", err)
 	}
-	subscriptions, err := r.subscriptions.ListByCard(ctx, *e.CardID)
+	subscriptions, err := r.subscriptions.ListByCards(ctx, cardIDs)
 	if err != nil {
-		return fmt.Errorf("erro ao listar assinaturas do cartão vinculado: %w", err)
+		return fmt.Errorf("erro ao listar assinaturas dos cartões vinculados: %w", err)
 	}
 
-	total := domaincard.MonthlyTotal(reference, purchases, subscriptions)
-	return e.SyncAmountFromCard(total)
-}
+	purchasesByCard := make(map[uuid.UUID][]*domaincard.InstallmentPurchase)
+	for _, p := range purchases {
+		purchasesByCard[p.CardID] = append(purchasesByCard[p.CardID], p)
+	}
+	subscriptionsByCard := make(map[uuid.UUID][]*domaincard.Subscription)
+	for _, s := range subscriptions {
+		subscriptionsByCard[s.CardID] = append(subscriptionsByCard[s.CardID], s)
+	}
 
-// ResolveAll applies Resolve to every expense in the slice.
-func (r *CardAmountResolver) ResolveAll(ctx context.Context, expenses []*domainexpense.Expense, reference time.Time) error {
 	for _, e := range expenses {
-		if err := r.Resolve(ctx, e, reference); err != nil {
+		if !e.IsCardLinked() {
+			continue
+		}
+		total := domaincard.MonthlyTotal(reference, purchasesByCard[*e.CardID], subscriptionsByCard[*e.CardID])
+		if err := e.SyncAmountFromCard(total); err != nil {
 			return err
 		}
 	}
 	return nil
+}
+
+func distinctCardIDs(expenses []*domainexpense.Expense) []uuid.UUID {
+	seen := make(map[uuid.UUID]bool)
+	var ids []uuid.UUID
+	for _, e := range expenses {
+		if e.IsCardLinked() && !seen[*e.CardID] {
+			seen[*e.CardID] = true
+			ids = append(ids, *e.CardID)
+		}
+	}
+	return ids
 }

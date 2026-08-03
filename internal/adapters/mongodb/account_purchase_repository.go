@@ -15,13 +15,10 @@ import (
 	"rinofinance-api/internal/domain/shared"
 )
 
-// AccountPurchaseRepository implements domain/account.PurchaseRepository
-// against MongoDB.
 type AccountPurchaseRepository struct {
 	collection *mongo.Collection
 }
 
-// NewAccountPurchaseRepository wires the repository to a database handle.
 func NewAccountPurchaseRepository(db *mongo.Database) *AccountPurchaseRepository {
 	return &AccountPurchaseRepository{collection: db.Collection(accountPurchasesCollection)}
 }
@@ -86,7 +83,6 @@ func (d accountPurchaseDoc) toDomain() (*domainaccount.Purchase, error) {
 	}, nil
 }
 
-// Create inserts a new account purchase document.
 func (r *AccountPurchaseRepository) Create(ctx context.Context, p *domainaccount.Purchase) error {
 	doc, err := newAccountPurchaseDoc(p)
 	if err != nil {
@@ -98,7 +94,6 @@ func (r *AccountPurchaseRepository) Create(ctx context.Context, p *domainaccount
 	return nil
 }
 
-// FindByID fetches an account purchase by ID.
 func (r *AccountPurchaseRepository) FindByID(ctx context.Context, id uuid.UUID) (*domainaccount.Purchase, error) {
 	var doc accountPurchaseDoc
 	if err := r.collection.FindOne(ctx, bson.M{"_id": id.String()}).Decode(&doc); err != nil {
@@ -110,11 +105,20 @@ func (r *AccountPurchaseRepository) FindByID(ctx context.Context, id uuid.UUID) 
 	return doc.toDomain()
 }
 
-// ListByAccount fetches every purchase for an account, ordered by the
-// user's manual position (with date as a stable tiebreaker).
 func (r *AccountPurchaseRepository) ListByAccount(ctx context.Context, accountID uuid.UUID) ([]*domainaccount.Purchase, error) {
+	return r.list(ctx, bson.M{"account_id": accountID.String()})
+}
+
+func (r *AccountPurchaseRepository) ListByAccounts(ctx context.Context, accountIDs []uuid.UUID) ([]*domainaccount.Purchase, error) {
+	if len(accountIDs) == 0 {
+		return nil, nil
+	}
+	return r.list(ctx, bson.M{"account_id": bson.M{"$in": stringIDs(accountIDs)}})
+}
+
+func (r *AccountPurchaseRepository) list(ctx context.Context, filter bson.M) ([]*domainaccount.Purchase, error) {
 	opts := options.Find().SetSort(bson.D{{Key: "position", Value: 1}, {Key: "date", Value: -1}})
-	cursor, err := r.collection.Find(ctx, bson.M{"account_id": accountID.String()}, opts)
+	cursor, err := r.collection.Find(ctx, filter, opts)
 	if err != nil {
 		return nil, fmt.Errorf("erro ao listar compras da conta: %w", err)
 	}
@@ -135,7 +139,6 @@ func (r *AccountPurchaseRepository) ListByAccount(ctx context.Context, accountID
 	return purchases, nil
 }
 
-// Update persists changes to an account purchase.
 func (r *AccountPurchaseRepository) Update(ctx context.Context, p *domainaccount.Purchase) error {
 	doc, err := newAccountPurchaseDoc(p)
 	if err != nil {
@@ -148,7 +151,6 @@ func (r *AccountPurchaseRepository) Update(ctx context.Context, p *domainaccount
 	return checkMatchedCount(res)
 }
 
-// Delete permanently removes an account purchase document.
 func (r *AccountPurchaseRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	res, err := r.collection.DeleteOne(ctx, bson.M{"_id": id.String()})
 	if err != nil {
@@ -157,8 +159,6 @@ func (r *AccountPurchaseRepository) Delete(ctx context.Context, id uuid.UUID) er
 	return checkDeletedCount(res)
 }
 
-// DeleteByAccount removes every purchase belonging to an account, used when
-// the account itself is deleted.
 func (r *AccountPurchaseRepository) DeleteByAccount(ctx context.Context, accountID uuid.UUID) error {
 	if _, err := r.collection.DeleteMany(ctx, bson.M{"account_id": accountID.String()}); err != nil {
 		return fmt.Errorf("erro ao remover compras da conta: %w", err)

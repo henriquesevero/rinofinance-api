@@ -11,8 +11,6 @@ import (
 	"rinofinance-api/internal/domain/shared"
 )
 
-// --- in-memory fakes ---
-
 type fakeCardRepo struct{ card *domaincard.CreditCard }
 
 func (f *fakeCardRepo) Create(context.Context, *domaincard.CreditCard) error { return nil }
@@ -42,6 +40,9 @@ func (f *fakePurchaseRepo) FindByID(context.Context, uuid.UUID) (*domaincard.Ins
 func (f *fakePurchaseRepo) ListByCard(context.Context, uuid.UUID) ([]*domaincard.InstallmentPurchase, error) {
 	return nil, nil
 }
+func (f *fakePurchaseRepo) ListByCards(context.Context, []uuid.UUID) ([]*domaincard.InstallmentPurchase, error) {
+	return nil, nil
+}
 func (f *fakePurchaseRepo) Update(context.Context, *domaincard.InstallmentPurchase) error { return nil }
 func (f *fakePurchaseRepo) Delete(context.Context, uuid.UUID) error                       { return nil }
 
@@ -55,6 +56,9 @@ func (f *fakeSubscriptionRepo) FindByID(context.Context, uuid.UUID) (*domaincard
 	return nil, shared.ErrNotFound
 }
 func (f *fakeSubscriptionRepo) ListByCard(context.Context, uuid.UUID) ([]*domaincard.Subscription, error) {
+	return nil, nil
+}
+func (f *fakeSubscriptionRepo) ListByCards(context.Context, []uuid.UUID) ([]*domaincard.Subscription, error) {
 	return nil, nil
 }
 func (f *fakeSubscriptionRepo) Update(context.Context, *domaincard.Subscription) error { return nil }
@@ -107,7 +111,7 @@ func TestImportCardItems_RejectsForeignCard(t *testing.T) {
 	card := &domaincard.CreditCard{ID: uuid.New(), UserID: owner, Name: "Itaú"}
 	uc := NewImportCardItemsUseCase(&fakeCardRepo{card: card}, &fakePurchaseRepo{}, &fakeSubscriptionRepo{})
 
-	_, err := uc.Execute(context.Background(), uuid.New() /* different user */, card.ID, nil, nil, time.Time{})
+	_, err := uc.Execute(context.Background(), uuid.New(), card.ID, nil, nil, time.Time{})
 	if err == nil {
 		t.Fatal("expected error for a card owned by another user")
 	}
@@ -123,7 +127,7 @@ func TestImportCardItems_AbortsBeforeWritingOnInvalidItem(t *testing.T) {
 	_, err := uc.Execute(context.Background(), userID, card.ID,
 		[]ImportInstallmentInput{
 			{Name: "Válida", InstallmentAmount: money(t, "10.00"), TotalInstallments: 3, FirstInstallmentDate: first},
-			{Name: "", InstallmentAmount: money(t, "10.00"), TotalInstallments: 3, FirstInstallmentDate: first}, // invalid: empty name
+			{Name: "", InstallmentAmount: money(t, "10.00"), TotalInstallments: 3, FirstInstallmentDate: first},
 		}, nil, time.Time{})
 	if err == nil {
 		t.Fatal("expected validation error for empty name")

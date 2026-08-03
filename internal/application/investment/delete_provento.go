@@ -10,17 +10,14 @@ import (
 	"rinofinance-api/internal/domain/shared"
 )
 
-// DeleteProventoUseCase removes a single provento entry.
 type DeleteProventoUseCase struct {
 	proventos domaininvestment.ProventoRepository
 }
 
-// NewDeleteProventoUseCase wires the dependencies for DeleteProventoUseCase.
 func NewDeleteProventoUseCase(proventos domaininvestment.ProventoRepository) *DeleteProventoUseCase {
 	return &DeleteProventoUseCase{proventos: proventos}
 }
 
-// Execute verifies ownership before deleting.
 func (uc *DeleteProventoUseCase) Execute(ctx context.Context, userID, proventoID uuid.UUID) error {
 	p, err := uc.proventos.FindByID(ctx, proventoID)
 	if err != nil {

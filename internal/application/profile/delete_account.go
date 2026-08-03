@@ -14,13 +14,6 @@ import (
 	domainuser "rinofinance-api/internal/domain/user"
 )
 
-// DeleteAccountUseCase permanently deletes a user and every aggregate
-// they own — incomes, expenses, credit cards (with their installment
-// purchases and subscriptions), and investment assets. It requires the
-// current password so a hijacked session token alone can't wipe an
-// account. MongoDB has no cascading foreign keys, so this orchestrates
-// the deletion explicitly, mirroring application/card.DeleteCardUseCase's
-// approach for a single card.
 type DeleteAccountUseCase struct {
 	users         domainuser.Repository
 	hasher        appauth.PasswordHasher
@@ -32,8 +25,6 @@ type DeleteAccountUseCase struct {
 	investments   domaininvestment.Repository
 }
 
-// NewDeleteAccountUseCase wires the dependencies for
-// DeleteAccountUseCase.
 func NewDeleteAccountUseCase(
 	users domainuser.Repository,
 	hasher appauth.PasswordHasher,
@@ -56,8 +47,6 @@ func NewDeleteAccountUseCase(
 	}
 }
 
-// Execute verifies currentPassword, deletes every aggregate owned by
-// userID, then deletes the user itself.
 func (uc *DeleteAccountUseCase) Execute(ctx context.Context, userID uuid.UUID, currentPassword string) error {
 	u, err := uc.users.FindByID(ctx, userID)
 	if err != nil {

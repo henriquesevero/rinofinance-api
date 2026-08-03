@@ -9,19 +9,15 @@ import (
 	domaincard "rinofinance-api/internal/domain/card"
 )
 
-// DeleteSubscriptionUseCase permanently removes a subscription.
 type DeleteSubscriptionUseCase struct {
 	cards         domaincard.CardRepository
 	subscriptions domaincard.SubscriptionRepository
 }
 
-// NewDeleteSubscriptionUseCase wires the dependencies for
-// DeleteSubscriptionUseCase.
 func NewDeleteSubscriptionUseCase(cards domaincard.CardRepository, subscriptions domaincard.SubscriptionRepository) *DeleteSubscriptionUseCase {
 	return &DeleteSubscriptionUseCase{cards: cards, subscriptions: subscriptions}
 }
 
-// Execute verifies ownership (via the parent card) before deleting.
 func (uc *DeleteSubscriptionUseCase) Execute(ctx context.Context, userID, subscriptionID uuid.UUID) error {
 	s, err := uc.subscriptions.FindByID(ctx, subscriptionID)
 	if err != nil {

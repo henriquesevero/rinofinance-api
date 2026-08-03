@@ -62,7 +62,7 @@ func TestInstallmentPurchase_RemainingTotal(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	reference := time.Date(2026, time.March, 1, 0, 0, 0, 0, time.UTC) // 2 months elapsed, 3 remain
+	reference := time.Date(2026, time.March, 1, 0, 0, 0, 0, time.UTC)
 	got := p.RemainingTotal(reference)
 	want := mustMoney(t, "600.00")
 	if !got.Decimal().Equal(want.Decimal()) {

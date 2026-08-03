@@ -1,6 +1,3 @@
-// Package profile orchestrates account-settings use cases: editing name
-// and avatar, changing email or password, and deleting the account along
-// with everything it owns.
 package profile
 
 import (
@@ -12,20 +9,14 @@ import (
 	domainuser "rinofinance-api/internal/domain/user"
 )
 
-// UpdateProfileUseCase edits the display name and avatar. Neither
-// requires the current password since they carry no account-takeover
-// risk.
 type UpdateProfileUseCase struct {
 	users domainuser.Repository
 }
 
-// NewUpdateProfileUseCase wires the dependencies for UpdateProfileUseCase.
 func NewUpdateProfileUseCase(users domainuser.Repository) *UpdateProfileUseCase {
 	return &UpdateProfileUseCase{users: users}
 }
 
-// Execute renames the user and replaces their avatar (pass an empty
-// avatarURL to clear it, falling back to initials in the UI).
 func (uc *UpdateProfileUseCase) Execute(ctx context.Context, userID uuid.UUID, name, avatarURL string) (*domainuser.User, error) {
 	u, err := uc.users.FindByID(ctx, userID)
 	if err != nil {

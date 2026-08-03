@@ -8,8 +8,6 @@ import (
 	"rinofinance-api/internal/adapters/http/dto"
 )
 
-// AccountHandler exposes account-settings endpoints: profile (name +
-// avatar), email, password and account deletion.
 type AccountHandler struct {
 	updateProfile  *appprofile.UpdateProfileUseCase
 	changeEmail    *appprofile.ChangeEmailUseCase
@@ -19,7 +17,6 @@ type AccountHandler struct {
 	stopSharing    *appprofile.StopSharingUseCase
 }
 
-// NewAccountHandler wires the dependencies for AccountHandler.
 func NewAccountHandler(
 	updateProfile *appprofile.UpdateProfileUseCase,
 	changeEmail *appprofile.ChangeEmailUseCase,
@@ -38,8 +35,6 @@ func NewAccountHandler(
 	}
 }
 
-// ShareData handles POST /api/account/share — link this account to another
-// (household sharing) using its email + password.
 func (h *AccountHandler) ShareData(w http.ResponseWriter, r *http.Request) {
 	userID, ok := requireAuthUserID(w, r)
 	if !ok {
@@ -58,7 +53,6 @@ func (h *AccountHandler) ShareData(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, dto.NewUserResponse(u))
 }
 
-// StopSharing handles POST /api/account/unshare — revert to own data.
 func (h *AccountHandler) StopSharing(w http.ResponseWriter, r *http.Request) {
 	userID, ok := requireAuthUserID(w, r)
 	if !ok {
@@ -71,7 +65,6 @@ func (h *AccountHandler) StopSharing(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-// UpdateProfile handles PUT /api/account/profile.
 func (h *AccountHandler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 	userID, ok := requireAuthUserID(w, r)
 	if !ok {
@@ -92,7 +85,6 @@ func (h *AccountHandler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, dto.NewUserResponse(u))
 }
 
-// ChangeEmail handles PUT /api/account/email.
 func (h *AccountHandler) ChangeEmail(w http.ResponseWriter, r *http.Request) {
 	userID, ok := requireAuthUserID(w, r)
 	if !ok {
@@ -113,7 +105,6 @@ func (h *AccountHandler) ChangeEmail(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, dto.NewUserResponse(u))
 }
 
-// ChangePassword handles PUT /api/account/password.
 func (h *AccountHandler) ChangePassword(w http.ResponseWriter, r *http.Request) {
 	userID, ok := requireAuthUserID(w, r)
 	if !ok {
@@ -133,7 +124,6 @@ func (h *AccountHandler) ChangePassword(w http.ResponseWriter, r *http.Request) 
 	w.WriteHeader(http.StatusNoContent)
 }
 
-// DeleteAccount handles DELETE /api/account.
 func (h *AccountHandler) DeleteAccount(w http.ResponseWriter, r *http.Request) {
 	userID, ok := requireAuthUserID(w, r)
 	if !ok {

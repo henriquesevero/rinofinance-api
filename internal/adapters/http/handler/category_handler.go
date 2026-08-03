@@ -8,8 +8,6 @@ import (
 	"rinofinance-api/internal/adapters/http/dto"
 )
 
-// CategoryHandler exposes CRUD endpoints for user-defined spending
-// categories.
 type CategoryHandler struct {
 	create  *appcategory.CreateCategoryUseCase
 	update  *appcategory.UpdateCategoryUseCase
@@ -18,7 +16,6 @@ type CategoryHandler struct {
 	reorder *appcategory.ReorderCategoriesUseCase
 }
 
-// NewCategoryHandler wires the dependencies for CategoryHandler.
 func NewCategoryHandler(
 	create *appcategory.CreateCategoryUseCase,
 	update *appcategory.UpdateCategoryUseCase,
@@ -29,7 +26,6 @@ func NewCategoryHandler(
 	return &CategoryHandler{create: create, update: update, delete: delete, list: list, reorder: reorder}
 }
 
-// Reorder handles PUT /api/categories/order.
 func (h *CategoryHandler) Reorder(w http.ResponseWriter, r *http.Request) {
 	userID, ok := requireUserID(w, r)
 	if !ok {
@@ -52,7 +48,6 @@ func (h *CategoryHandler) Reorder(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-// List handles GET /api/categories.
 func (h *CategoryHandler) List(w http.ResponseWriter, r *http.Request) {
 	userID, ok := requireUserID(w, r)
 	if !ok {
@@ -66,7 +61,6 @@ func (h *CategoryHandler) List(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, dto.NewCategoriesResponse(categories))
 }
 
-// Create handles POST /api/categories.
 func (h *CategoryHandler) Create(w http.ResponseWriter, r *http.Request) {
 	userID, ok := requireUserID(w, r)
 	if !ok {
@@ -85,7 +79,6 @@ func (h *CategoryHandler) Create(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusCreated, dto.NewCategoryResponse(c))
 }
 
-// Update handles PUT /api/categories/{id}.
 func (h *CategoryHandler) Update(w http.ResponseWriter, r *http.Request) {
 	userID, ok := requireUserID(w, r)
 	if !ok {
@@ -108,7 +101,6 @@ func (h *CategoryHandler) Update(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, dto.NewCategoryResponse(c))
 }
 
-// Delete handles DELETE /api/categories/{id}.
 func (h *CategoryHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	userID, ok := requireUserID(w, r)
 	if !ok {

@@ -10,19 +10,14 @@ import (
 	"rinofinance-api/internal/domain/shared"
 )
 
-// UpdateCardUseCase renames an existing credit card and replaces its
-// accent color and/or logo.
 type UpdateCardUseCase struct {
 	repo domaincard.CardRepository
 }
 
-// NewUpdateCardUseCase wires the dependencies for UpdateCardUseCase.
 func NewUpdateCardUseCase(repo domaincard.CardRepository) *UpdateCardUseCase {
 	return &UpdateCardUseCase{repo: repo}
 }
 
-// Execute loads the card, verifies ownership, then renames it and
-// replaces its color/logo/image/limit/due day.
 func (uc *UpdateCardUseCase) Execute(ctx context.Context, userID, cardID uuid.UUID, name string, details CardDetails) (*domaincard.CreditCard, error) {
 	c, err := uc.repo.FindByID(ctx, cardID)
 	if err != nil {
