@@ -183,6 +183,36 @@ func (s *Service) DeleteItem(ctx context.Context, userID, itemID uuid.UUID) erro
 	return nil
 }
 
+// ReorderItems persists a new manual ordering of the user's items within a
+// list (kind). Ids not owned by the user (or of the wrong kind) are ignored,
+// and only items whose position actually changes are written.
+func (s *Service) ReorderItems(ctx context.Context, userID uuid.UUID, kind string, orderedIDs []uuid.UUID) error {
+	owned, err := s.items.ListByUser(ctx, userID, kind)
+	if err != nil {
+		return fmt.Errorf("erro ao listar itens: %w", err)
+	}
+	byID := make(map[uuid.UUID]*domainwishlist.Item, len(owned))
+	for _, i := range owned {
+		byID[i.ID] = i
+	}
+
+	position := 0
+	for _, id := range orderedIDs {
+		item, ok := byID[id]
+		if !ok {
+			continue
+		}
+		if item.Position != position {
+			item.SetPosition(position)
+			if err := s.items.Update(ctx, item); err != nil {
+				return fmt.Errorf("erro ao reordenar item: %w", err)
+			}
+		}
+		position++
+	}
+	return nil
+}
+
 // verifySection ensures a referenced section exists and belongs to the user.
 func (s *Service) verifySection(ctx context.Context, userID uuid.UUID, sectionID *uuid.UUID) error {
 	if sectionID == nil {

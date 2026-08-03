@@ -161,6 +161,29 @@ func (h *WishlistHandler) UpdateItem(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, dto.NewWishlistItemResponse(item))
 }
 
+// ReorderItems handles PUT /api/wishlist/items/order.
+func (h *WishlistHandler) ReorderItems(w http.ResponseWriter, r *http.Request) {
+	userID, ok := requireUserID(w, r)
+	if !ok {
+		return
+	}
+	var req dto.ReorderRequest
+	if err := decodeJSON(r, &req); err != nil {
+		writeError(w, err)
+		return
+	}
+	ids, err := parseUUIDList(req.IDs)
+	if err != nil {
+		writeError(w, errBadRequest)
+		return
+	}
+	if err := h.svc.ReorderItems(r.Context(), userID, wishlistKind(r), ids); err != nil {
+		writeError(w, err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
 // DeleteItem handles DELETE /api/wishlist/items/{id}.
 func (h *WishlistHandler) DeleteItem(w http.ResponseWriter, r *http.Request) {
 	userID, ok := requireUserID(w, r)
