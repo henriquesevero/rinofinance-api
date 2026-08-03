@@ -46,6 +46,7 @@ func NewRouter(h Handlers, tokens *auth.TokenIssuer, resolveOwner func(uuid.UUID
 	protected := http.NewServeMux()
 
 	protected.HandleFunc("GET /api/dashboard/summary", h.Dashboard.GetSummary)
+	protected.HandleFunc("GET /api/dashboard/annual", h.Dashboard.GetAnnual)
 
 	protected.HandleFunc("PUT /api/account/profile", h.Account.UpdateProfile)
 	protected.HandleFunc("PUT /api/account/email", h.Account.ChangeEmail)

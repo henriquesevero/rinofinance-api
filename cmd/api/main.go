@@ -165,6 +165,7 @@ func main() {
 	wishlistService := appwishlist.NewService(wishlistSectionRepo, wishlistItemRepo)
 
 	getMonthlySummary := appdashboard.NewGetMonthlySummaryUseCase(incomeRepo, expenseRepo, cardAmountResolver, accountLinkResolver, accountBalanceResolver, monthlyStatusRepo)
+	getAnnualSummary := appdashboard.NewGetAnnualSummaryUseCase(incomeRepo, expenseRepo, accountBalanceResolver, installmentRepo, subscriptionRepo, accountPurchaseRepo, monthlyStatusRepo)
 
 	// Handlers (primary/driving adapter).
 	handlers := rest.Handlers{
@@ -191,7 +192,7 @@ func main() {
 			createAccount, updateAccount, deleteAccount2, listAccounts, reorderAccounts,
 			createAccountPurchase, updateAccountPurchase, deleteAccountPurchase,
 		),
-		Dashboard: handler.NewDashboardHandler(getMonthlySummary),
+		Dashboard: handler.NewDashboardHandler(getMonthlySummary, getAnnualSummary),
 	}
 
 	router := rest.NewRouter(handlers, tokens, resolveDataOwner, cfg.AllowedOrigins)
