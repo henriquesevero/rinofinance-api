@@ -1,0 +1,93 @@
+package push
+
+import (
+	"fmt"
+	"time"
+
+	domaincard "rinofinance-api/internal/domain/card"
+)
+
+func cardTip(cards []*domaincard.CreditCard, now time.Time) string {
+	var dueCard *domaincard.CreditCard
+	dueIn := 999
+	var closeCard *domaincard.CreditCard
+	closeIn := 999
+
+	for _, c := range cards {
+		if c.DueDay >= 1 && c.DueDay <= 31 {
+			if d := daysUntilDay(now, c.DueDay); d < dueIn {
+				dueIn, dueCard = d, c
+			}
+		}
+		if c.ClosingDay >= 1 && c.ClosingDay <= 31 {
+			if d := daysUntilDay(now, c.ClosingDay); d < closeIn {
+				closeIn, closeCard = d, c
+			}
+		}
+	}
+
+	if dueCard != nil && dueIn <= 3 {
+		return fmt.Sprintf("A fatura do %s %s.", dueCard.Name, dueLabel(dueIn))
+	}
+	if closeCard != nil && closeIn <= 7 {
+		best := bestPurchaseDay(closeCard.ClosingDay)
+		return fmt.Sprintf(
+			"A fatura do %s fecha %s — compre a partir do dia %d pra cair só na próxima.",
+			closeCard.Name, whenLabel(closeIn), best,
+		)
+	}
+	return ""
+}
+
+func daysUntilDay(now time.Time, day int) int {
+	loc := now.Location()
+	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, loc)
+
+	onDay := func(year int, month time.Month) time.Time {
+		lastDay := time.Date(year, month+1, 0, 0, 0, 0, 0, loc).Day()
+		if day > lastDay {
+			day = lastDay
+		}
+		return time.Date(year, month, day, 0, 0, 0, 0, loc)
+	}
+
+	target := onDay(now.Year(), now.Month())
+	if target.Before(today) {
+		nextMonth := now.Month() + 1
+		year := now.Year()
+		if nextMonth > 12 {
+			nextMonth, year = 1, year+1
+		}
+		target = onDay(year, nextMonth)
+	}
+	return int(target.Sub(today).Hours()) / 24
+}
+
+func bestPurchaseDay(closingDay int) int {
+	if closingDay >= 31 {
+		return 1
+	}
+	return closingDay + 1
+}
+
+func dueLabel(days int) string {
+	switch days {
+	case 0:
+		return "vence hoje"
+	case 1:
+		return "vence amanhã"
+	default:
+		return fmt.Sprintf("vence em %d dias", days)
+	}
+}
+
+func whenLabel(days int) string {
+	switch days {
+	case 0:
+		return "hoje"
+	case 1:
+		return "amanhã"
+	default:
+		return fmt.Sprintf("em %d dias", days)
+	}
+}

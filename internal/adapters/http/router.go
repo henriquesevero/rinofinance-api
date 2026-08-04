@@ -19,8 +19,9 @@ type Handlers struct {
 	Investment *handler.InvestmentHandler
 	Category   *handler.CategoryHandler
 	Wishlist   *handler.WishlistHandler
-	Wallet     *handler.WalletHandler
-	Dashboard  *handler.DashboardHandler
+	Wallet       *handler.WalletHandler
+	Dashboard    *handler.DashboardHandler
+	Notification *handler.NotificationHandler
 }
 
 func NewRouter(h Handlers, tokens *auth.TokenIssuer, resolveOwner func(uuid.UUID) uuid.UUID, allowedOrigins []string) http.Handler {
@@ -39,6 +40,11 @@ func NewRouter(h Handlers, tokens *auth.TokenIssuer, resolveOwner func(uuid.UUID
 
 	protected.HandleFunc("GET /api/dashboard/summary", h.Dashboard.GetSummary)
 	protected.HandleFunc("GET /api/dashboard/annual", h.Dashboard.GetAnnual)
+
+	protected.HandleFunc("GET /api/notifications/vapid-public-key", h.Notification.VapidPublicKey)
+	protected.HandleFunc("POST /api/notifications/subscribe", h.Notification.Subscribe)
+	protected.HandleFunc("DELETE /api/notifications/subscribe", h.Notification.Unsubscribe)
+	protected.HandleFunc("POST /api/notifications/test", h.Notification.SendTest)
 
 	protected.HandleFunc("PUT /api/account/profile", h.Account.UpdateProfile)
 	protected.HandleFunc("PUT /api/account/email", h.Account.ChangeEmail)

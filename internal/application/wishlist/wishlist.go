@@ -41,11 +41,12 @@ func (s *Service) GetOverview(ctx context.Context, userID uuid.UUID, kind string
 	return Overview{Sections: sections, Items: items, Total: total}, nil
 }
 
-func (s *Service) CreateSection(ctx context.Context, userID uuid.UUID, kind, name string) (*domainwishlist.Section, error) {
+func (s *Service) CreateSection(ctx context.Context, userID uuid.UUID, kind, name, color string) (*domainwishlist.Section, error) {
 	sec, err := domainwishlist.NewSection(userID, kind, name)
 	if err != nil {
 		return nil, err
 	}
+	sec.SetColor(color)
 	existing, err := s.sections.ListByUser(ctx, userID, kind)
 	if err != nil {
 		return nil, fmt.Errorf("erro ao contar seções: %w", err)
@@ -57,7 +58,7 @@ func (s *Service) CreateSection(ctx context.Context, userID uuid.UUID, kind, nam
 	return sec, nil
 }
 
-func (s *Service) UpdateSection(ctx context.Context, userID, sectionID uuid.UUID, name string) (*domainwishlist.Section, error) {
+func (s *Service) UpdateSection(ctx context.Context, userID, sectionID uuid.UUID, name, color string) (*domainwishlist.Section, error) {
 	sec, err := s.sections.FindByID(ctx, sectionID)
 	if err != nil {
 		return nil, fmt.Errorf("erro ao buscar seção: %w", err)
@@ -68,6 +69,7 @@ func (s *Service) UpdateSection(ctx context.Context, userID, sectionID uuid.UUID
 	if err := sec.Rename(name); err != nil {
 		return nil, err
 	}
+	sec.SetColor(color)
 	if err := s.sections.Update(ctx, sec); err != nil {
 		return nil, fmt.Errorf("erro ao atualizar seção: %w", err)
 	}

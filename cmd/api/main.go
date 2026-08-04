@@ -15,6 +15,7 @@ import (
 	rest "rinofinance-api/internal/adapters/http"
 	"rinofinance-api/internal/adapters/http/handler"
 	"rinofinance-api/internal/adapters/mongodb"
+	"rinofinance-api/internal/adapters/push"
 	appaccount "rinofinance-api/internal/application/account"
 	appauth "rinofinance-api/internal/application/auth"
 	appcard "rinofinance-api/internal/application/card"
@@ -68,6 +69,7 @@ func main() {
 	monthlyStatusRepo := mongodb.NewMonthlyStatusRepository(db)
 	wishlistSectionRepo := mongodb.NewWishlistSectionRepository(db)
 	wishlistItemRepo := mongodb.NewWishlistItemRepository(db)
+	pushSubscriptionRepo := mongodb.NewPushSubscriptionRepository(db)
 
 	hasher := pkgauth.BcryptHasher{}
 	tokens := pkgauth.NewTokenIssuer(cfg.JWTSecret, cfg.JWTTTL)
@@ -159,6 +161,11 @@ func main() {
 	getMonthlySummary := appdashboard.NewGetMonthlySummaryUseCase(incomeRepo, expenseRepo, cardAmountResolver, accountLinkResolver, accountBalanceResolver, monthlyStatusRepo)
 	getAnnualSummary := appdashboard.NewGetAnnualSummaryUseCase(incomeRepo, expenseRepo, accountBalanceResolver, installmentRepo, subscriptionRepo, accountPurchaseRepo, monthlyStatusRepo)
 
+	pushScheduler := push.NewScheduler(pushSubscriptionRepo, userRepo, cardRepo, cfg.VAPIDPublicKey, cfg.VAPIDPrivateKey, cfg.VAPIDEmail)
+	schedulerCtx, cancelScheduler := context.WithCancel(context.Background())
+	defer cancelScheduler()
+	pushScheduler.Start(schedulerCtx)
+
 	handlers := rest.Handlers{
 		Auth:    handler.NewAuthHandler(registerUser, loginUser),
 		Account: handler.NewAccountHandler(updateProfile, changeEmail, changePassword, deleteAccount, shareData, stopSharing),
@@ -183,7 +190,8 @@ func main() {
 			createAccount, updateAccount, deleteAccount2, listAccounts, reorderAccounts,
 			createAccountPurchase, updateAccountPurchase, deleteAccountPurchase,
 		),
-		Dashboard: handler.NewDashboardHandler(getMonthlySummary, getAnnualSummary),
+		Dashboard:    handler.NewDashboardHandler(getMonthlySummary, getAnnualSummary),
+		Notification: handler.NewNotificationHandler(pushSubscriptionRepo, pushScheduler, cfg.VAPIDPublicKey),
 	}
 
 	router := rest.NewRouter(handlers, tokens, resolveDataOwner, cfg.AllowedOrigins)

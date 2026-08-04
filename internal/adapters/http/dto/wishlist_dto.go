@@ -9,7 +9,8 @@ import (
 )
 
 type WishlistSectionRequest struct {
-	Name string `json:"name"`
+	Name  string `json:"name"`
+	Color string `json:"color"`
 }
 
 type WishlistItemRequest struct {
@@ -21,12 +22,13 @@ type WishlistItemRequest struct {
 }
 
 type WishlistSectionResponse struct {
-	ID   uuid.UUID `json:"id"`
-	Name string    `json:"name"`
+	ID    uuid.UUID `json:"id"`
+	Name  string    `json:"name"`
+	Color string    `json:"color"`
 }
 
 func NewWishlistSectionResponse(s *domainwishlist.Section) WishlistSectionResponse {
-	return WishlistSectionResponse{ID: s.ID, Name: s.Name}
+	return WishlistSectionResponse{ID: s.ID, Name: s.Name, Color: s.Color}
 }
 
 type WishlistItemResponse struct {

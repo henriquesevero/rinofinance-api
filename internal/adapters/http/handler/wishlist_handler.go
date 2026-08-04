@@ -54,7 +54,7 @@ func (h *WishlistHandler) CreateSection(w http.ResponseWriter, r *http.Request) 
 		writeError(w, err)
 		return
 	}
-	s, err := h.svc.CreateSection(r.Context(), userID, wishlistKind(r), req.Name)
+	s, err := h.svc.CreateSection(r.Context(), userID, wishlistKind(r), req.Name, req.Color)
 	if err != nil {
 		writeError(w, err)
 		return
@@ -76,7 +76,7 @@ func (h *WishlistHandler) UpdateSection(w http.ResponseWriter, r *http.Request) 
 		writeError(w, err)
 		return
 	}
-	s, err := h.svc.UpdateSection(r.Context(), userID, sectionID, req.Name)
+	s, err := h.svc.UpdateSection(r.Context(), userID, sectionID, req.Name, req.Color)
 	if err != nil {
 		writeError(w, err)
 		return
@@ -189,10 +189,14 @@ func (h *WishlistHandler) DeleteItem(w http.ResponseWriter, r *http.Request) {
 }
 
 func wishlistKind(r *http.Request) string {
-	if r.URL.Query().Get("kind") == "owned" {
+	switch r.URL.Query().Get("kind") {
+	case "owned":
 		return "owned"
+	case "web":
+		return "web"
+	default:
+		return "wishlist"
 	}
-	return "wishlist"
 }
 
 func itemInput(req dto.WishlistItemRequest) (appwishlist.ItemInput, error) {

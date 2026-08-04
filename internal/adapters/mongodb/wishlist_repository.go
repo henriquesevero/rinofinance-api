@@ -28,6 +28,7 @@ type wishlistSectionDoc struct {
 	UserID    string    `bson:"user_id"`
 	Kind      string    `bson:"kind,omitempty"`
 	Name      string    `bson:"name"`
+	Color     string    `bson:"color,omitempty"`
 	Position  int       `bson:"position"`
 	CreatedAt time.Time `bson:"created_at"`
 	UpdatedAt time.Time `bson:"updated_at"`
@@ -39,6 +40,7 @@ func newWishlistSectionDoc(s *domainwishlist.Section) wishlistSectionDoc {
 		UserID:    s.UserID.String(),
 		Kind:      s.Kind,
 		Name:      s.Name,
+		Color:     s.Color,
 		Position:  s.Position,
 		CreatedAt: s.CreatedAt,
 		UpdatedAt: s.UpdatedAt,
@@ -54,11 +56,16 @@ func (d wishlistSectionDoc) toDomain() (*domainwishlist.Section, error) {
 	if err != nil {
 		return nil, fmt.Errorf("erro ao converter ID de usuário da seção: %w", err)
 	}
+	color := d.Color
+	if color == "" {
+		color = "#6B7280"
+	}
 	return &domainwishlist.Section{
 		ID:        id,
 		UserID:    userID,
 		Kind:      d.Kind,
 		Name:      d.Name,
+		Color:     color,
 		Position:  d.Position,
 		CreatedAt: d.CreatedAt,
 		UpdatedAt: d.UpdatedAt,

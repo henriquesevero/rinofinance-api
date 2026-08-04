@@ -9,12 +9,15 @@ import (
 	"rinofinance-api/internal/domain/shared"
 )
 
+const fallbackSectionColor = "#6B7280"
+
 type Section struct {
 	ID     uuid.UUID
 	UserID uuid.UUID
 
 	Kind      string
 	Name      string
+	Color     string
 	Position  int
 	CreatedAt time.Time
 	UpdatedAt time.Time
@@ -26,7 +29,15 @@ func NewSection(userID uuid.UUID, kind, name string) (*Section, error) {
 		return nil, shared.ErrEmptyName
 	}
 	now := time.Now().UTC()
-	return &Section{ID: uuid.New(), UserID: userID, Kind: kind, Name: name, CreatedAt: now, UpdatedAt: now}, nil
+	return &Section{
+		ID:        uuid.New(),
+		UserID:    userID,
+		Kind:      kind,
+		Name:      name,
+		Color:     fallbackSectionColor,
+		CreatedAt: now,
+		UpdatedAt: now,
+	}, nil
 }
 
 func (s *Section) Rename(name string) error {
@@ -37,6 +48,15 @@ func (s *Section) Rename(name string) error {
 	s.Name = name
 	s.UpdatedAt = time.Now().UTC()
 	return nil
+}
+
+func (s *Section) SetColor(color string) {
+	color = strings.TrimSpace(color)
+	if color == "" {
+		color = fallbackSectionColor
+	}
+	s.Color = color
+	s.UpdatedAt = time.Now().UTC()
 }
 
 func (s *Section) SetPosition(position int) {

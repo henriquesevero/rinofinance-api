@@ -53,6 +53,7 @@ const (
 	monthlyStatusCollection        = "monthly_item_status"
 	wishlistSectionsCollection     = "wishlist_sections"
 	wishlistItemsCollection        = "wishlist_items"
+	pushSubscriptionsCollection    = "push_subscriptions"
 )
 
 func toDecimal128(m shared.Money) (bson.Decimal128, error) {

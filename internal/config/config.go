@@ -21,6 +21,10 @@ type Config struct {
 	AllowedOrigins []string
 
 	RegistrationCode string
+
+	VAPIDPublicKey  string
+	VAPIDPrivateKey string
+	VAPIDEmail      string
 }
 
 func Load() (*Config, error) {
@@ -63,6 +67,11 @@ func Load() (*Config, error) {
 		registrationCode = "171598"
 	}
 
+	vapidEmail := os.Getenv("VAPID_EMAIL")
+	if vapidEmail == "" {
+		vapidEmail = "contato@henriquesevero.com"
+	}
+
 	return &Config{
 		Port:             port,
 		MongoURI:         mongoURI,
@@ -71,6 +80,9 @@ func Load() (*Config, error) {
 		JWTTTL:           ttl,
 		AllowedOrigins:   origins,
 		RegistrationCode: registrationCode,
+		VAPIDPublicKey:   os.Getenv("VAPID_PUBLIC_KEY"),
+		VAPIDPrivateKey:  os.Getenv("VAPID_PRIVATE_KEY"),
+		VAPIDEmail:       vapidEmail,
 	}, nil
 }
 
