@@ -7,37 +7,39 @@ import (
 	domaincard "rinofinance-api/internal/domain/card"
 )
 
-func cardTip(cards []*domaincard.CreditCard, now time.Time) (title, body string, ok bool) {
-	var dueCard *domaincard.CreditCard
-	dueIn := 999
-	var closeCard *domaincard.CreditCard
-	closeIn := 999
+const (
+	dueAlertDays     = 3
+	closingAlertDays = 3
+)
 
+type cardAlert struct {
+	title string
+	body  string
+}
+
+func cardAlerts(cards []*domaincard.CreditCard, now time.Time) []cardAlert {
+	var alerts []cardAlert
 	for _, c := range cards {
 		if c.DueDay >= 1 && c.DueDay <= 31 {
-			if d := daysUntilDay(now, c.DueDay); d < dueIn {
-				dueIn, dueCard = d, c
+			if d := daysUntilDay(now, c.DueDay); d <= dueAlertDays {
+				alerts = append(alerts, cardAlert{
+					title: fmt.Sprintf("⚠️ Fatura do %s %s", c.Name, dueLabel(d)),
+					body:  "Deixe programado o pagamento pra não pegar juros.",
+				})
+				continue
 			}
 		}
 		if c.ClosingDay >= 1 && c.ClosingDay <= 31 {
-			if d := daysUntilDay(now, c.ClosingDay); d < closeIn {
-				closeIn, closeCard = d, c
+			if d := daysUntilDay(now, c.ClosingDay); d <= closingAlertDays {
+				best := bestPurchaseDay(c.ClosingDay)
+				alerts = append(alerts, cardAlert{
+					title: fmt.Sprintf("💳 Fatura do %s fecha %s", c.Name, whenLabel(d)),
+					body:  fmt.Sprintf("Compre a partir do dia %d pra cair só na próxima fatura.", best),
+				})
 			}
 		}
 	}
-
-	if dueCard != nil && dueIn <= 3 {
-		return "⚠️ Fatura chegando", fmt.Sprintf("A fatura do %s %s.", dueCard.Name, dueLabel(dueIn)), true
-	}
-	if closeCard != nil && closeIn <= 7 {
-		best := bestPurchaseDay(closeCard.ClosingDay)
-		body := fmt.Sprintf(
-			"A fatura do %s fecha %s — compre a partir do dia %d pra cair só na próxima.",
-			closeCard.Name, whenLabel(closeIn), best,
-		)
-		return "💳 Fatura fechando", body, true
-	}
-	return "", "", false
+	return alerts
 }
 
 func daysUntilDay(now time.Time, day int) int {

@@ -70,7 +70,7 @@ func (s *Scheduler) Start(ctx context.Context) {
 			}
 			switch now.Hour() {
 			case alertHour:
-				s.run(ctx, now, "alerta", s.alertFor)
+				s.sendCardAlerts(ctx, now)
 			case updateHour:
 				s.run(ctx, now, "atualizar", s.updateFor)
 			}
@@ -124,13 +124,31 @@ func (s *Scheduler) updateFor(ctx context.Context, userID uuid.UUID, _ time.Time
 	return message{title: updateTitle, body: updateBody(s.userName(ctx, userID)), send: true}
 }
 
-func (s *Scheduler) alertFor(ctx context.Context, userID uuid.UUID, now time.Time) message {
-	cards, err := s.cards.ListByUser(ctx, userID)
+func (s *Scheduler) sendCardAlerts(ctx context.Context, now time.Time) {
+	subs, err := s.subscriptions.ListAll(ctx)
 	if err != nil {
-		return message{}
+		log.Printf("push scheduler: erro ao listar inscrições: %v", err)
+		return
 	}
-	title, body, ok := cardTip(cards, now)
-	return message{title: title, body: body, send: ok}
+
+	byUser := make(map[uuid.UUID][]*notification.PushSubscription)
+	for _, sub := range subs {
+		byUser[sub.UserID] = append(byUser[sub.UserID], sub)
+	}
+
+	for userID, userSubs := range byUser {
+		cards, err := s.cards.ListByUser(ctx, userID)
+		if err != nil {
+			continue
+		}
+		alerts := cardAlerts(cards, now)
+		if len(alerts) > 0 {
+			log.Printf("push scheduler: %d alerta(s) de fatura para usuário %s", len(alerts), userID)
+		}
+		for _, alert := range alerts {
+			s.deliver(ctx, userSubs, message{title: alert.title, body: alert.body, send: true})
+		}
+	}
 }
 
 func (s *Scheduler) SendNow(ctx context.Context, userID uuid.UUID) error {
@@ -148,11 +166,16 @@ func (s *Scheduler) SendNow(ctx context.Context, userID uuid.UUID) error {
 		return nil
 	}
 
-	msg := s.alertFor(ctx, userID, time.Now().In(brt))
-	if !msg.send {
-		msg = s.updateFor(ctx, userID, time.Now().In(brt))
+	now := time.Now().In(brt)
+	if cards, err := s.cards.ListByUser(ctx, userID); err == nil {
+		if alerts := cardAlerts(cards, now); len(alerts) > 0 {
+			for _, alert := range alerts {
+				s.deliver(ctx, userSubs, message{title: alert.title, body: alert.body, send: true})
+			}
+			return nil
+		}
 	}
-	s.deliver(ctx, userSubs, msg)
+	s.deliver(ctx, userSubs, s.updateFor(ctx, userID, now))
 	return nil
 }
 
