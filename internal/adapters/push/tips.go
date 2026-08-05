@@ -7,7 +7,7 @@ import (
 	domaincard "rinofinance-api/internal/domain/card"
 )
 
-func cardTip(cards []*domaincard.CreditCard, now time.Time) string {
+func cardTip(cards []*domaincard.CreditCard, now time.Time) (title, body string, ok bool) {
 	var dueCard *domaincard.CreditCard
 	dueIn := 999
 	var closeCard *domaincard.CreditCard
@@ -27,16 +27,17 @@ func cardTip(cards []*domaincard.CreditCard, now time.Time) string {
 	}
 
 	if dueCard != nil && dueIn <= 3 {
-		return fmt.Sprintf("A fatura do %s %s.", dueCard.Name, dueLabel(dueIn))
+		return "⚠️ Fatura chegando", fmt.Sprintf("A fatura do %s %s.", dueCard.Name, dueLabel(dueIn)), true
 	}
 	if closeCard != nil && closeIn <= 7 {
 		best := bestPurchaseDay(closeCard.ClosingDay)
-		return fmt.Sprintf(
+		body := fmt.Sprintf(
 			"A fatura do %s fecha %s — compre a partir do dia %d pra cair só na próxima.",
 			closeCard.Name, whenLabel(closeIn), best,
 		)
+		return "💳 Fatura fechando", body, true
 	}
-	return ""
+	return "", "", false
 }
 
 func daysUntilDay(now time.Time, day int) int {

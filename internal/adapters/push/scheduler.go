@@ -17,8 +17,9 @@ import (
 )
 
 const (
-	appTitle = "RinoFinance"
-	sendHour = 20
+	alertHour   = 8
+	updateHour  = 20
+	updateTitle = "Hora de atualizar suas finanças 💸"
 )
 
 var brt = time.FixedZone("BRT", -3*60*60)
@@ -64,20 +65,29 @@ func (s *Scheduler) Start(ctx context.Context) {
 			}
 
 			now := time.Now().In(brt)
-			if now.Hour() == sendHour && now.Minute() == 0 {
-				s.sendDailyReminders(ctx, now)
+			if now.Minute() != 0 {
+				continue
+			}
+			switch now.Hour() {
+			case alertHour:
+				s.run(ctx, now, "alerta", s.alertFor)
+			case updateHour:
+				s.run(ctx, now, "atualizar", s.updateFor)
 			}
 		}
 	}()
 }
 
-func (s *Scheduler) sendDailyReminders(ctx context.Context, now time.Time) {
+type message struct {
+	title string
+	body  string
+	send  bool
+}
+
+func (s *Scheduler) run(ctx context.Context, now time.Time, slot string, build func(context.Context, uuid.UUID, time.Time) message) {
 	subs, err := s.subscriptions.ListAll(ctx)
 	if err != nil {
 		log.Printf("push scheduler: erro ao listar inscrições: %v", err)
-		return
-	}
-	if len(subs) == 0 {
 		return
 	}
 
@@ -85,22 +95,42 @@ func (s *Scheduler) sendDailyReminders(ctx context.Context, now time.Time) {
 	for _, sub := range subs {
 		byUser[sub.UserID] = append(byUser[sub.UserID], sub)
 	}
-	log.Printf("push scheduler: enviando lembrete diário para %d usuário(s)", len(byUser))
+	log.Printf("push scheduler: slot=%s para %d usuário(s)", slot, len(byUser))
 
 	for userID, userSubs := range byUser {
-		body := s.buildMessage(ctx, userID, now)
-		for _, sub := range userSubs {
-			status, err := send(sub, appTitle, body, s.vapidPublic, s.vapidPrivate, s.vapidEmail)
-			if err != nil {
-				log.Printf("push scheduler: erro ao enviar: %v", err)
-			}
-			if status == 404 || status == 410 {
-				if delErr := s.subscriptions.DeleteByID(ctx, sub.ID); delErr != nil {
-					log.Printf("push scheduler: erro ao remover inscrição expirada: %v", delErr)
-				}
+		msg := build(ctx, userID, now)
+		if !msg.send {
+			continue
+		}
+		s.deliver(ctx, userSubs, msg)
+	}
+}
+
+func (s *Scheduler) deliver(ctx context.Context, subs []*notification.PushSubscription, msg message) {
+	for _, sub := range subs {
+		status, err := send(sub, msg.title, msg.body, s.vapidPublic, s.vapidPrivate, s.vapidEmail)
+		if err != nil {
+			log.Printf("push scheduler: erro ao enviar: %v", err)
+		}
+		if status == 404 || status == 410 {
+			if delErr := s.subscriptions.DeleteByID(ctx, sub.ID); delErr != nil {
+				log.Printf("push scheduler: erro ao remover inscrição expirada: %v", delErr)
 			}
 		}
 	}
+}
+
+func (s *Scheduler) updateFor(ctx context.Context, userID uuid.UUID, _ time.Time) message {
+	return message{title: updateTitle, body: updateBody(s.userName(ctx, userID)), send: true}
+}
+
+func (s *Scheduler) alertFor(ctx context.Context, userID uuid.UUID, now time.Time) message {
+	cards, err := s.cards.ListByUser(ctx, userID)
+	if err != nil {
+		return message{}
+	}
+	title, body, ok := cardTip(cards, now)
+	return message{title: title, body: body, send: ok}
 }
 
 func (s *Scheduler) SendNow(ctx context.Context, userID uuid.UUID) error {
@@ -108,37 +138,36 @@ func (s *Scheduler) SendNow(ctx context.Context, userID uuid.UUID) error {
 	if err != nil {
 		return err
 	}
-	body := s.buildMessage(ctx, userID, time.Now().In(brt))
+	var userSubs []*notification.PushSubscription
 	for _, sub := range subs {
-		if sub.UserID != userID {
-			continue
-		}
-		status, err := send(sub, appTitle, body, s.vapidPublic, s.vapidPrivate, s.vapidEmail)
-		if (status == 404 || status == 410) && err != nil {
-			_ = s.subscriptions.DeleteByID(ctx, sub.ID)
+		if sub.UserID == userID {
+			userSubs = append(userSubs, sub)
 		}
 	}
+	if len(userSubs) == 0 {
+		return nil
+	}
+
+	msg := s.alertFor(ctx, userID, time.Now().In(brt))
+	if !msg.send {
+		msg = s.updateFor(ctx, userID, time.Now().In(brt))
+	}
+	s.deliver(ctx, userSubs, msg)
 	return nil
 }
 
-func (s *Scheduler) buildMessage(ctx context.Context, userID uuid.UUID, now time.Time) string {
-	name := ""
+func (s *Scheduler) userName(ctx context.Context, userID uuid.UUID) string {
 	if user, err := s.users.FindByID(ctx, userID); err == nil {
-		name = firstName(user.Name)
+		return firstName(user.Name)
 	}
+	return ""
+}
 
-	greeting := "Hora de atualizar suas finanças 💸"
+func updateBody(name string) string {
 	if name != "" {
-		greeting = name + ", hora de atualizar suas finanças 💸"
+		return name + ", registre os gastos de hoje e mantenha tudo em dia."
 	}
-
-	cards, err := s.cards.ListByUser(ctx, userID)
-	if err == nil {
-		if tip := cardTip(cards, now); tip != "" {
-			return greeting + " " + tip
-		}
-	}
-	return greeting + " Registre os gastos de hoje e mantenha tudo em dia."
+	return "Registre os gastos de hoje e mantenha tudo em dia."
 }
 
 func send(sub *notification.PushSubscription, title, body, pubKey, privKey, email string) (int, error) {
