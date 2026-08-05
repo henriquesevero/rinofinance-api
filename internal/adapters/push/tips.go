@@ -17,26 +17,34 @@ type cardAlert struct {
 	body  string
 }
 
-func cardAlerts(cards []*domaincard.CreditCard, now time.Time) []cardAlert {
+func dueAlerts(cards []*domaincard.CreditCard, now time.Time) []cardAlert {
 	var alerts []cardAlert
 	for _, c := range cards {
-		if c.DueDay >= 1 && c.DueDay <= 31 {
-			if d := daysUntilDay(now, c.DueDay); d <= dueAlertDays {
-				alerts = append(alerts, cardAlert{
-					title: fmt.Sprintf("⚠️ Fatura do %s %s", c.Name, dueLabel(d)),
-					body:  "Deixe programado o pagamento pra não pegar juros.",
-				})
-				continue
-			}
+		if c.DueDay < 1 || c.DueDay > 31 {
+			continue
 		}
-		if c.ClosingDay >= 1 && c.ClosingDay <= 31 {
-			if d := daysUntilDay(now, c.ClosingDay); d <= closingAlertDays {
-				best := bestPurchaseDay(c.ClosingDay)
-				alerts = append(alerts, cardAlert{
-					title: fmt.Sprintf("💳 Fatura do %s fecha %s", c.Name, whenLabel(d)),
-					body:  fmt.Sprintf("Compre a partir do dia %d pra cair só na próxima fatura.", best),
-				})
-			}
+		if d := daysUntilDay(now, c.DueDay); d <= dueAlertDays {
+			alerts = append(alerts, cardAlert{
+				title: fmt.Sprintf("⚠️ Fatura do %s %s", c.Name, dueLabel(d)),
+				body:  "Deixe programado o pagamento pra não pegar juros.",
+			})
+		}
+	}
+	return alerts
+}
+
+func closingAlerts(cards []*domaincard.CreditCard, now time.Time) []cardAlert {
+	var alerts []cardAlert
+	for _, c := range cards {
+		if c.ClosingDay < 1 || c.ClosingDay > 31 {
+			continue
+		}
+		if d := daysUntilDay(now, c.ClosingDay); d <= closingAlertDays {
+			best := bestPurchaseDay(c.ClosingDay)
+			alerts = append(alerts, cardAlert{
+				title: fmt.Sprintf("💳 Fatura do %s fecha %s", c.Name, whenLabel(d)),
+				body:  fmt.Sprintf("Compre a partir do dia %d pra cair só na próxima fatura.", best),
+			})
 		}
 	}
 	return alerts

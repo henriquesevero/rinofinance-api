@@ -17,7 +17,8 @@ import (
 )
 
 const (
-	alertHour   = 8
+	dueHour     = 8
+	closingHour = 12
 	updateHour  = 20
 	updateTitle = "Hora de atualizar suas finanças 💸"
 )
@@ -69,8 +70,10 @@ func (s *Scheduler) Start(ctx context.Context) {
 				continue
 			}
 			switch now.Hour() {
-			case alertHour:
-				s.sendCardAlerts(ctx, now)
+			case dueHour:
+				s.sendCardAlerts(ctx, now, "vencimento", dueAlerts)
+			case closingHour:
+				s.sendCardAlerts(ctx, now, "fechamento", closingAlerts)
 			case updateHour:
 				s.run(ctx, now, "atualizar", s.updateFor)
 			}
@@ -124,7 +127,7 @@ func (s *Scheduler) updateFor(ctx context.Context, userID uuid.UUID, _ time.Time
 	return message{title: updateTitle, body: updateBody(s.userName(ctx, userID)), send: true}
 }
 
-func (s *Scheduler) sendCardAlerts(ctx context.Context, now time.Time) {
+func (s *Scheduler) sendCardAlerts(ctx context.Context, now time.Time, slot string, build func([]*domaincard.CreditCard, time.Time) []cardAlert) {
 	subs, err := s.subscriptions.ListAll(ctx)
 	if err != nil {
 		log.Printf("push scheduler: erro ao listar inscrições: %v", err)
@@ -141,9 +144,9 @@ func (s *Scheduler) sendCardAlerts(ctx context.Context, now time.Time) {
 		if err != nil {
 			continue
 		}
-		alerts := cardAlerts(cards, now)
+		alerts := build(cards, now)
 		if len(alerts) > 0 {
-			log.Printf("push scheduler: %d alerta(s) de fatura para usuário %s", len(alerts), userID)
+			log.Printf("push scheduler: slot=%s, %d alerta(s) para usuário %s", slot, len(alerts), userID)
 		}
 		for _, alert := range alerts {
 			s.deliver(ctx, userSubs, message{title: alert.title, body: alert.body, send: true})
@@ -167,15 +170,17 @@ func (s *Scheduler) SendNow(ctx context.Context, userID uuid.UUID) error {
 	}
 
 	now := time.Now().In(brt)
+	sent := false
 	if cards, err := s.cards.ListByUser(ctx, userID); err == nil {
-		if alerts := cardAlerts(cards, now); len(alerts) > 0 {
-			for _, alert := range alerts {
-				s.deliver(ctx, userSubs, message{title: alert.title, body: alert.body, send: true})
-			}
-			return nil
+		alerts := append(dueAlerts(cards, now), closingAlerts(cards, now)...)
+		for _, alert := range alerts {
+			s.deliver(ctx, userSubs, message{title: alert.title, body: alert.body, send: true})
+			sent = true
 		}
 	}
-	s.deliver(ctx, userSubs, s.updateFor(ctx, userID, now))
+	if !sent {
+		s.deliver(ctx, userSubs, s.updateFor(ctx, userID, now))
+	}
 	return nil
 }
 
