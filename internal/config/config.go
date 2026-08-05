@@ -48,7 +48,7 @@ func Load() (*Config, error) {
 		return nil, fmt.Errorf("variável de ambiente JWT_SECRET é obrigatória")
 	}
 
-	ttl := 30 * 24 * time.Hour
+	ttl := 365 * 24 * time.Hour
 	if raw := os.Getenv("JWT_TTL"); raw != "" {
 		parsed, err := time.ParseDuration(raw)
 		if err != nil {
