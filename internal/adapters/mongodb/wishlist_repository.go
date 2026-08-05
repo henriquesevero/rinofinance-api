@@ -144,6 +144,7 @@ type wishlistItemDoc struct {
 	URL       string          `bson:"url,omitempty"`
 	Price     bson.Decimal128 `bson:"price"`
 	ImageURL  string          `bson:"image_url,omitempty"`
+	LogoURL   string          `bson:"logo_url,omitempty"`
 	Position  int             `bson:"position"`
 	CreatedAt time.Time       `bson:"created_at"`
 	UpdatedAt time.Time       `bson:"updated_at"`
@@ -163,6 +164,7 @@ func newWishlistItemDoc(i *domainwishlist.Item) (wishlistItemDoc, error) {
 		URL:       i.URL,
 		Price:     price,
 		ImageURL:  i.ImageURL,
+		LogoURL:   i.LogoURL,
 		Position:  i.Position,
 		CreatedAt: i.CreatedAt,
 		UpdatedAt: i.UpdatedAt,
@@ -195,6 +197,7 @@ func (d wishlistItemDoc) toDomain() (*domainwishlist.Item, error) {
 		URL:       d.URL,
 		Price:     price,
 		ImageURL:  d.ImageURL,
+		LogoURL:   d.LogoURL,
 		Position:  d.Position,
 		CreatedAt: d.CreatedAt,
 		UpdatedAt: d.UpdatedAt,

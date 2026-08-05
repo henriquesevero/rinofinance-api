@@ -107,6 +107,7 @@ func NewRouter(h Handlers, tokens *auth.TokenIssuer, resolveOwner func(uuid.UUID
 	protected.HandleFunc("GET /api/wishlist", h.Wishlist.Overview)
 	protected.HandleFunc("GET /api/wishlist/unfurl", h.Wishlist.Unfurl)
 	protected.HandleFunc("POST /api/wishlist/sections", h.Wishlist.CreateSection)
+	protected.HandleFunc("PUT /api/wishlist/sections/order", h.Wishlist.ReorderSections)
 	protected.HandleFunc("PUT /api/wishlist/sections/{id}", h.Wishlist.UpdateSection)
 	protected.HandleFunc("DELETE /api/wishlist/sections/{id}", h.Wishlist.DeleteSection)
 	protected.HandleFunc("POST /api/wishlist/items", h.Wishlist.CreateItem)

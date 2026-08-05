@@ -109,6 +109,7 @@ type ItemInput struct {
 	URL       string
 	Price     shared.Money
 	ImageURL  string
+	LogoURL   string
 	SectionID *uuid.UUID
 }
 
@@ -121,6 +122,7 @@ func (s *Service) CreateItem(ctx context.Context, userID uuid.UUID, kind string,
 		return nil, err
 	}
 	item.SetImage(in.ImageURL)
+	item.SetLogo(in.LogoURL)
 	item.SetSection(in.SectionID)
 
 	existing, err := s.items.ListByUser(ctx, userID, kind)
@@ -145,7 +147,7 @@ func (s *Service) UpdateItem(ctx context.Context, userID, itemID uuid.UUID, in I
 	if err := s.verifySection(ctx, userID, in.SectionID); err != nil {
 		return nil, err
 	}
-	if err := item.Update(in.Name, in.URL, in.Price, in.ImageURL, in.SectionID); err != nil {
+	if err := item.Update(in.Name, in.URL, in.Price, in.ImageURL, in.LogoURL, in.SectionID); err != nil {
 		return nil, err
 	}
 	if err := s.items.Update(ctx, item); err != nil {
@@ -164,6 +166,33 @@ func (s *Service) DeleteItem(ctx context.Context, userID, itemID uuid.UUID) erro
 	}
 	if err := s.items.Delete(ctx, itemID); err != nil {
 		return fmt.Errorf("erro ao remover item: %w", err)
+	}
+	return nil
+}
+
+func (s *Service) ReorderSections(ctx context.Context, userID uuid.UUID, kind string, orderedIDs []uuid.UUID) error {
+	owned, err := s.sections.ListByUser(ctx, userID, kind)
+	if err != nil {
+		return fmt.Errorf("erro ao listar seções: %w", err)
+	}
+	byID := make(map[uuid.UUID]*domainwishlist.Section, len(owned))
+	for _, sec := range owned {
+		byID[sec.ID] = sec
+	}
+
+	position := 0
+	for _, id := range orderedIDs {
+		sec, ok := byID[id]
+		if !ok {
+			continue
+		}
+		if sec.Position != position {
+			sec.SetPosition(position)
+			if err := s.sections.Update(ctx, sec); err != nil {
+				return fmt.Errorf("erro ao reordenar seção: %w", err)
+			}
+		}
+		position++
 	}
 	return nil
 }

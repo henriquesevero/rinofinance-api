@@ -78,6 +78,7 @@ type Item struct {
 	Price shared.Money
 
 	ImageURL  string
+	LogoURL   string
 	Position  int
 	CreatedAt time.Time
 	UpdatedAt time.Time
@@ -104,7 +105,7 @@ func NewItem(userID uuid.UUID, kind, name, url string, price shared.Money) (*Ite
 	}, nil
 }
 
-func (i *Item) Update(name, url string, price shared.Money, imageURL string, sectionID *uuid.UUID) error {
+func (i *Item) Update(name, url string, price shared.Money, imageURL, logoURL string, sectionID *uuid.UUID) error {
 	name = strings.TrimSpace(name)
 	if name == "" {
 		return shared.ErrEmptyName
@@ -116,6 +117,7 @@ func (i *Item) Update(name, url string, price shared.Money, imageURL string, sec
 	i.URL = strings.TrimSpace(url)
 	i.Price = price
 	i.ImageURL = imageURL
+	i.LogoURL = strings.TrimSpace(logoURL)
 	i.SectionID = sectionID
 	i.UpdatedAt = time.Now().UTC()
 	return nil
@@ -123,6 +125,11 @@ func (i *Item) Update(name, url string, price shared.Money, imageURL string, sec
 
 func (i *Item) SetImage(imageURL string) {
 	i.ImageURL = imageURL
+	i.UpdatedAt = time.Now().UTC()
+}
+
+func (i *Item) SetLogo(logoURL string) {
+	i.LogoURL = strings.TrimSpace(logoURL)
 	i.UpdatedAt = time.Now().UTC()
 }
 

@@ -18,6 +18,7 @@ type WishlistItemRequest struct {
 	URL       string       `json:"url"`
 	Price     shared.Money `json:"price"`
 	ImageURL  string       `json:"imageUrl"`
+	LogoURL   string       `json:"logoUrl"`
 	SectionID string       `json:"sectionId"`
 }
 
@@ -38,6 +39,7 @@ type WishlistItemResponse struct {
 	URL       string       `json:"url,omitempty"`
 	Price     shared.Money `json:"price"`
 	ImageURL  string       `json:"imageUrl,omitempty"`
+	LogoURL   string       `json:"logoUrl,omitempty"`
 }
 
 func NewWishlistItemResponse(i *domainwishlist.Item) WishlistItemResponse {
@@ -48,6 +50,7 @@ func NewWishlistItemResponse(i *domainwishlist.Item) WishlistItemResponse {
 		URL:       i.URL,
 		Price:     i.Price,
 		ImageURL:  i.ImageURL,
+		LogoURL:   i.LogoURL,
 	}
 }
 

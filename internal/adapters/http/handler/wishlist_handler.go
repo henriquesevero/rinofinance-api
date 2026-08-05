@@ -172,6 +172,28 @@ func (h *WishlistHandler) ReorderItems(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+func (h *WishlistHandler) ReorderSections(w http.ResponseWriter, r *http.Request) {
+	userID, ok := requireUserID(w, r)
+	if !ok {
+		return
+	}
+	var req dto.ReorderRequest
+	if err := decodeJSON(r, &req); err != nil {
+		writeError(w, err)
+		return
+	}
+	ids, err := parseUUIDList(req.IDs)
+	if err != nil {
+		writeError(w, errBadRequest)
+		return
+	}
+	if err := h.svc.ReorderSections(r.Context(), userID, wishlistKind(r), ids); err != nil {
+		writeError(w, err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
 func (h *WishlistHandler) DeleteItem(w http.ResponseWriter, r *http.Request) {
 	userID, ok := requireUserID(w, r)
 	if !ok {
@@ -209,6 +231,7 @@ func itemInput(req dto.WishlistItemRequest) (appwishlist.ItemInput, error) {
 		URL:       req.URL,
 		Price:     req.Price,
 		ImageURL:  req.ImageURL,
+		LogoURL:   req.LogoURL,
 		SectionID: sectionID,
 	}, nil
 }
