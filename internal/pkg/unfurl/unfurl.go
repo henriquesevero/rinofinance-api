@@ -2,6 +2,7 @@ package unfurl
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"io"
 	"net/http"
@@ -25,6 +26,7 @@ var (
 	metaTagRe  = regexp.MustCompile(`(?is)<meta\b[^>]*>`)
 	linkTagRe  = regexp.MustCompile(`(?is)<link\b[^>]*>`)
 	titleTagRe = regexp.MustCompile(`(?is)<title[^>]*>(.*?)</title>`)
+	ldJSONRe   = regexp.MustCompile(`(?is)<script[^>]+type\s*=\s*["']application/ld\+json["'][^>]*>(.*?)</script>`)
 
 	amazonImgRe = regexp.MustCompile(`https://[a-z0-9.\-]*media-amazon\.com/images/I/[A-Za-z0-9._%\-]+\.(?:jpg|jpeg|png)`)
 )
@@ -44,8 +46,12 @@ func Fetch(ctx context.Context, rawURL string) (Metadata, error) {
 		return Metadata{}, nil
 	}
 	req.Header.Set("User-Agent", browserUA)
-	req.Header.Set("Accept", "text/html,application/xhtml+xml")
+	req.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8")
 	req.Header.Set("Accept-Language", "pt-BR,pt;q=0.9,en;q=0.8")
+	req.Header.Set("Sec-Fetch-Dest", "document")
+	req.Header.Set("Sec-Fetch-Mode", "navigate")
+	req.Header.Set("Sec-Fetch-Site", "none")
+	req.Header.Set("Upgrade-Insecure-Requests", "1")
 
 	resp, err := (&http.Client{Timeout: 10 * time.Second}).Do(req)
 	if err != nil {
@@ -56,21 +62,21 @@ func Fetch(ctx context.Context, rawURL string) (Metadata, error) {
 		return Metadata{}, nil
 	}
 
-	body, _ := io.ReadAll(io.LimitReader(resp.Body, 2<<20))
+	body, _ := io.ReadAll(io.LimitReader(resp.Body, 3<<20))
 	html := string(body)
 
-	image := metaContent(html, "og:image", "og:image:url", "og:image:secure_url", "twitter:image", "twitter:image:src")
-	if image == "" {
-		image = linkHref(html, "image_src")
-	}
-	if image == "" {
-		image = amazonImgRe.FindString(html)
-	}
-	if image != "" {
-		if abs, err := u.Parse(strings.TrimSpace(image)); err == nil {
-			image = abs.String()
-		}
-	}
+	base := resp.Request.URL
+
+	image := firstNonEmpty(
+		metaContent(html, "og:image", "og:image:url", "og:image:secure_url", "twitter:image", "twitter:image:src"),
+		metaContent(html, "image"),
+		jsonLDImage(html),
+		linkHref(html, "image_src"),
+		amazonImgRe.FindString(html),
+		linkHref(html, "apple-touch-icon"),
+		linkHref(html, "apple-touch-icon-precomposed"),
+	)
+	image = absURL(base, image)
 
 	title := metaContent(html, "og:title", "twitter:title")
 	if title == "" {
@@ -84,12 +90,28 @@ func Fetch(ctx context.Context, rawURL string) (Metadata, error) {
 	return Metadata{ImageURL: image, Title: strings.TrimSpace(title), Price: strings.TrimSpace(price)}, nil
 }
 
+func firstNonEmpty(values ...string) string {
+	for _, v := range values {
+		if strings.TrimSpace(v) != "" {
+			return strings.TrimSpace(v)
+		}
+	}
+	return ""
+}
+
+func absURL(base *url.URL, raw string) string {
+	if raw == "" || base == nil {
+		return raw
+	}
+	if abs, err := base.Parse(raw); err == nil {
+		return abs.String()
+	}
+	return raw
+}
+
 func metaContent(html string, keys ...string) string {
 	for _, tag := range metaTagRe.FindAllString(html, -1) {
-		key := attrValue(tag, "property")
-		if key == "" {
-			key = attrValue(tag, "name")
-		}
+		key := firstNonEmpty(attrValue(tag, "property"), attrValue(tag, "name"), attrValue(tag, "itemprop"))
 		if key == "" {
 			continue
 		}
@@ -106,9 +128,69 @@ func metaContent(html string, keys ...string) string {
 
 func linkHref(html, rel string) string {
 	for _, tag := range linkTagRe.FindAllString(html, -1) {
-		if strings.EqualFold(attrValue(tag, "rel"), rel) {
-			if h := attrValue(tag, "href"); h != "" {
-				return h
+		for _, r := range strings.Fields(attrValue(tag, "rel")) {
+			if strings.EqualFold(r, rel) {
+				if h := attrValue(tag, "href"); h != "" {
+					return h
+				}
+			}
+		}
+	}
+	return ""
+}
+
+func jsonLDImage(html string) string {
+	for _, m := range ldJSONRe.FindAllStringSubmatch(html, -1) {
+		var data any
+		if err := json.Unmarshal([]byte(strings.TrimSpace(m[1])), &data); err != nil {
+			continue
+		}
+		if img := findImage(data); img != "" {
+			return img
+		}
+	}
+	return ""
+}
+
+func findImage(v any) string {
+	switch t := v.(type) {
+	case map[string]any:
+		if img, ok := t["image"]; ok {
+			if s := imageURL(img); s != "" {
+				return s
+			}
+		}
+		for _, val := range t {
+			if s := findImage(val); s != "" {
+				return s
+			}
+		}
+	case []any:
+		for _, val := range t {
+			if s := findImage(val); s != "" {
+				return s
+			}
+		}
+	}
+	return ""
+}
+
+func imageURL(img any) string {
+	switch t := img.(type) {
+	case string:
+		if strings.HasPrefix(t, "http") {
+			return t
+		}
+	case []any:
+		for _, e := range t {
+			if s := imageURL(e); s != "" {
+				return s
+			}
+		}
+	case map[string]any:
+		for _, key := range []string{"url", "contentUrl"} {
+			if s, ok := t[key].(string); ok && strings.HasPrefix(s, "http") {
+				return s
 			}
 		}
 	}
