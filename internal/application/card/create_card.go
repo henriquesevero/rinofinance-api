@@ -12,6 +12,7 @@ import (
 
 type CardDetails struct {
 	Color       string
+	Brand       string
 	LogoURL     string
 	ImageURL    string
 	CreditLimit shared.Money
@@ -33,6 +34,7 @@ func (uc *CreateCardUseCase) Execute(ctx context.Context, userID uuid.UUID, name
 		return nil, err
 	}
 	c.SetColor(details.Color)
+	c.SetBrand(details.Brand)
 	c.SetLogo(details.LogoURL)
 	c.SetImage(details.ImageURL)
 	c.SetCreditLimit(details.CreditLimit)

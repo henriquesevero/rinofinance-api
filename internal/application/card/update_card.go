@@ -31,6 +31,7 @@ func (uc *UpdateCardUseCase) Execute(ctx context.Context, userID, cardID uuid.UU
 		return nil, err
 	}
 	c.SetColor(details.Color)
+	c.SetBrand(details.Brand)
 	c.SetLogo(details.LogoURL)
 	c.SetImage(details.ImageURL)
 	c.SetCreditLimit(details.CreditLimit)

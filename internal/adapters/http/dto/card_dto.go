@@ -15,6 +15,7 @@ const DateOnlyLayout = "2006-01-02"
 type CardRequest struct {
 	Name        string       `json:"name"`
 	Color       string       `json:"color"`
+	Brand       string       `json:"brand"`
 	LogoURL     string       `json:"logoUrl"`
 	ImageURL    string       `json:"imageUrl"`
 	CreditLimit shared.Money `json:"creditLimit"`
@@ -25,6 +26,7 @@ type CardRequest struct {
 func (r CardRequest) Details() appcard.CardDetails {
 	return appcard.CardDetails{
 		Color:       r.Color,
+		Brand:       r.Brand,
 		LogoURL:     r.LogoURL,
 		ImageURL:    r.ImageURL,
 		CreditLimit: r.CreditLimit,
@@ -103,6 +105,7 @@ type CardResponse struct {
 	ID          uuid.UUID    `json:"id"`
 	Name        string       `json:"name"`
 	Color       string       `json:"color,omitempty"`
+	Brand       string       `json:"brand,omitempty"`
 	LogoURL     string       `json:"logoUrl,omitempty"`
 	ImageURL    string       `json:"imageUrl,omitempty"`
 	CreditLimit shared.Money `json:"creditLimit"`
@@ -115,6 +118,7 @@ func NewCardResponse(c *domaincard.CreditCard) CardResponse {
 		ID:          c.ID,
 		Name:        c.Name,
 		Color:       c.Color,
+		Brand:       c.Brand,
 		LogoURL:     c.LogoURL,
 		ImageURL:    c.ImageURL,
 		CreditLimit: c.CreditLimit,
@@ -192,6 +196,7 @@ type CardOverviewResponse struct {
 	ID                   uuid.UUID                     `json:"id"`
 	Name                 string                        `json:"name"`
 	Color                string                        `json:"color,omitempty"`
+	Brand                string                        `json:"brand,omitempty"`
 	LogoURL              string                        `json:"logoUrl,omitempty"`
 	ImageURL             string                        `json:"imageUrl,omitempty"`
 	CreditLimit          shared.Money                  `json:"creditLimit"`
@@ -222,6 +227,7 @@ func NewCardsOverviewResponse(overviews []appcard.CardOverview, grandTotal share
 			ID:                   o.Card.ID,
 			Name:                 o.Card.Name,
 			Color:                o.Card.Color,
+			Brand:                o.Card.Brand,
 			LogoURL:              o.Card.LogoURL,
 			ImageURL:             o.Card.ImageURL,
 			CreditLimit:          o.Card.CreditLimit,

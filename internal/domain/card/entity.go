@@ -24,6 +24,8 @@ type CreditCard struct {
 
 	Color string
 
+	Brand string
+
 	LogoURL string
 
 	ImageURL string
@@ -67,6 +69,11 @@ func (c *CreditCard) Rename(name string) error {
 
 func (c *CreditCard) SetColor(color string) {
 	c.Color = color
+	c.UpdatedAt = time.Now().UTC()
+}
+
+func (c *CreditCard) SetBrand(brand string) {
+	c.Brand = brand
 	c.UpdatedAt = time.Now().UTC()
 }
 

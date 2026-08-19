@@ -28,6 +28,7 @@ type creditCardDoc struct {
 	UserID      string          `bson:"user_id"`
 	Name        string          `bson:"name"`
 	Color       string          `bson:"color,omitempty"`
+	Brand       string          `bson:"brand,omitempty"`
 	LogoURL     string          `bson:"logo_url,omitempty"`
 	ImageURL    string          `bson:"image_url,omitempty"`
 	CreditLimit bson.Decimal128 `bson:"credit_limit"`
@@ -48,6 +49,7 @@ func newCreditCardDoc(c *domaincard.CreditCard) (creditCardDoc, error) {
 		UserID:      c.UserID.String(),
 		Name:        c.Name,
 		Color:       c.Color,
+		Brand:       c.Brand,
 		LogoURL:     c.LogoURL,
 		ImageURL:    c.ImageURL,
 		CreditLimit: creditLimit,
@@ -77,6 +79,7 @@ func (d creditCardDoc) toDomain() (*domaincard.CreditCard, error) {
 		UserID:      userID,
 		Name:        d.Name,
 		Color:       d.Color,
+		Brand:       d.Brand,
 		LogoURL:     d.LogoURL,
 		ImageURL:    d.ImageURL,
 		CreditLimit: creditLimit,
