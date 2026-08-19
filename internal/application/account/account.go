@@ -11,6 +11,15 @@ import (
 	"rinofinance-api/internal/domain/shared"
 )
 
+type AccountDetails struct {
+	Color         string
+	ImageURL      string
+	Balance       shared.Money
+	Agency        string
+	AccountNumber string
+	AccountType   string
+}
+
 type CreateAccountUseCase struct {
 	repo domainaccount.Repository
 }
@@ -19,13 +28,16 @@ func NewCreateAccountUseCase(repo domainaccount.Repository) *CreateAccountUseCas
 	return &CreateAccountUseCase{repo: repo}
 }
 
-func (uc *CreateAccountUseCase) Execute(ctx context.Context, userID uuid.UUID, name, color, imageURL string, balance shared.Money) (*domainaccount.Account, error) {
-	a, err := domainaccount.NewAccount(userID, name, balance)
+func (uc *CreateAccountUseCase) Execute(ctx context.Context, userID uuid.UUID, name string, details AccountDetails) (*domainaccount.Account, error) {
+	a, err := domainaccount.NewAccount(userID, name, details.Balance)
 	if err != nil {
 		return nil, err
 	}
-	a.SetColor(color)
-	a.SetImage(imageURL)
+	a.SetColor(details.Color)
+	a.SetImage(details.ImageURL)
+	a.SetAgency(details.Agency)
+	a.SetAccountNumber(details.AccountNumber)
+	a.SetAccountType(details.AccountType)
 
 	existing, err := uc.repo.ListByUser(ctx, userID)
 	if err != nil {
@@ -82,7 +94,7 @@ func NewUpdateAccountUseCase(repo domainaccount.Repository) *UpdateAccountUseCas
 	return &UpdateAccountUseCase{repo: repo}
 }
 
-func (uc *UpdateAccountUseCase) Execute(ctx context.Context, userID, accountID uuid.UUID, name, color, imageURL string, balance shared.Money) (*domainaccount.Account, error) {
+func (uc *UpdateAccountUseCase) Execute(ctx context.Context, userID, accountID uuid.UUID, name string, details AccountDetails) (*domainaccount.Account, error) {
 	a, err := uc.repo.FindByID(ctx, accountID)
 	if err != nil {
 		return nil, fmt.Errorf("erro ao buscar conta: %w", err)
@@ -93,9 +105,12 @@ func (uc *UpdateAccountUseCase) Execute(ctx context.Context, userID, accountID u
 	if err := a.Rename(name); err != nil {
 		return nil, err
 	}
-	a.SetColor(color)
-	a.SetImage(imageURL)
-	a.SetBalance(balance)
+	a.SetColor(details.Color)
+	a.SetImage(details.ImageURL)
+	a.SetBalance(details.Balance)
+	a.SetAgency(details.Agency)
+	a.SetAccountNumber(details.AccountNumber)
+	a.SetAccountType(details.AccountType)
 	if err := uc.repo.Update(ctx, a); err != nil {
 		return nil, fmt.Errorf("erro ao atualizar conta: %w", err)
 	}

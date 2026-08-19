@@ -91,7 +91,7 @@ func (h *WalletHandler) Create(w http.ResponseWriter, r *http.Request) {
 		writeError(w, err)
 		return
 	}
-	a, err := h.create.Execute(r.Context(), userID, req.Name, req.Color, req.ImageURL, req.Balance)
+	a, err := h.create.Execute(r.Context(), userID, req.Name, req.Details())
 	if err != nil {
 		writeError(w, err)
 		return
@@ -113,7 +113,7 @@ func (h *WalletHandler) Update(w http.ResponseWriter, r *http.Request) {
 		writeError(w, err)
 		return
 	}
-	a, err := h.update.Execute(r.Context(), userID, accountID, req.Name, req.Color, req.ImageURL, req.Balance)
+	a, err := h.update.Execute(r.Context(), userID, accountID, req.Name, req.Details())
 	if err != nil {
 		writeError(w, err)
 		return

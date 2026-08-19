@@ -24,15 +24,18 @@ func NewAccountRepository(db *mongo.Database) *AccountRepository {
 }
 
 type accountDoc struct {
-	ID        string          `bson:"_id"`
-	UserID    string          `bson:"user_id"`
-	Name      string          `bson:"name"`
-	Color     string          `bson:"color,omitempty"`
-	ImageURL  string          `bson:"image_url,omitempty"`
-	Balance   bson.Decimal128 `bson:"balance"`
-	Position  int             `bson:"position"`
-	CreatedAt time.Time       `bson:"created_at"`
-	UpdatedAt time.Time       `bson:"updated_at"`
+	ID            string          `bson:"_id"`
+	UserID        string          `bson:"user_id"`
+	Name          string          `bson:"name"`
+	Color         string          `bson:"color,omitempty"`
+	ImageURL      string          `bson:"image_url,omitempty"`
+	Balance       bson.Decimal128 `bson:"balance"`
+	Agency        string          `bson:"agency,omitempty"`
+	AccountNumber string          `bson:"account_number,omitempty"`
+	AccountType   string          `bson:"account_type,omitempty"`
+	Position      int             `bson:"position"`
+	CreatedAt     time.Time       `bson:"created_at"`
+	UpdatedAt     time.Time       `bson:"updated_at"`
 }
 
 func newAccountDoc(a *domainaccount.Account) (accountDoc, error) {
@@ -41,15 +44,18 @@ func newAccountDoc(a *domainaccount.Account) (accountDoc, error) {
 		return accountDoc{}, err
 	}
 	return accountDoc{
-		ID:        a.ID.String(),
-		UserID:    a.UserID.String(),
-		Name:      a.Name,
-		Color:     a.Color,
-		ImageURL:  a.ImageURL,
-		Balance:   balance,
-		Position:  a.Position,
-		CreatedAt: a.CreatedAt,
-		UpdatedAt: a.UpdatedAt,
+		ID:            a.ID.String(),
+		UserID:        a.UserID.String(),
+		Name:          a.Name,
+		Color:         a.Color,
+		ImageURL:      a.ImageURL,
+		Balance:       balance,
+		Agency:        a.Agency,
+		AccountNumber: a.AccountNumber,
+		AccountType:   a.AccountType,
+		Position:      a.Position,
+		CreatedAt:     a.CreatedAt,
+		UpdatedAt:     a.UpdatedAt,
 	}, nil
 }
 
@@ -67,15 +73,18 @@ func (d accountDoc) toDomain() (*domainaccount.Account, error) {
 		return nil, err
 	}
 	return &domainaccount.Account{
-		ID:        id,
-		UserID:    userID,
-		Name:      d.Name,
-		Color:     d.Color,
-		ImageURL:  d.ImageURL,
-		Balance:   balance,
-		Position:  d.Position,
-		CreatedAt: d.CreatedAt,
-		UpdatedAt: d.UpdatedAt,
+		ID:            id,
+		UserID:        userID,
+		Name:          d.Name,
+		Color:         d.Color,
+		ImageURL:      d.ImageURL,
+		Balance:       balance,
+		Agency:        d.Agency,
+		AccountNumber: d.AccountNumber,
+		AccountType:   d.AccountType,
+		Position:      d.Position,
+		CreatedAt:     d.CreatedAt,
+		UpdatedAt:     d.UpdatedAt,
 	}, nil
 }
 

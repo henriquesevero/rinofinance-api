@@ -20,6 +20,12 @@ type Account struct {
 
 	Balance shared.Money
 
+	Agency string
+
+	AccountNumber string
+
+	AccountType string
+
 	Position  int
 	CreatedAt time.Time
 	UpdatedAt time.Time
@@ -72,6 +78,21 @@ func (a *Account) SetImage(imageURL string) {
 
 func (a *Account) SetBalance(balance shared.Money) {
 	a.Balance = balance
+	a.UpdatedAt = time.Now().UTC()
+}
+
+func (a *Account) SetAgency(agency string) {
+	a.Agency = strings.TrimSpace(agency)
+	a.UpdatedAt = time.Now().UTC()
+}
+
+func (a *Account) SetAccountNumber(accountNumber string) {
+	a.AccountNumber = strings.TrimSpace(accountNumber)
+	a.UpdatedAt = time.Now().UTC()
+}
+
+func (a *Account) SetAccountType(accountType string) {
+	a.AccountType = strings.TrimSpace(accountType)
 	a.UpdatedAt = time.Now().UTC()
 }
 

@@ -11,10 +11,24 @@ import (
 )
 
 type AccountRequest struct {
-	Name     string       `json:"name"`
-	Color    string       `json:"color"`
-	ImageURL string       `json:"imageUrl"`
-	Balance  shared.Money `json:"balance"`
+	Name          string       `json:"name"`
+	Color         string       `json:"color"`
+	ImageURL      string       `json:"imageUrl"`
+	Balance       shared.Money `json:"balance"`
+	Agency        string       `json:"agency"`
+	AccountNumber string       `json:"accountNumber"`
+	AccountType   string       `json:"accountType"`
+}
+
+func (r AccountRequest) Details() appaccount.AccountDetails {
+	return appaccount.AccountDetails{
+		Color:         r.Color,
+		ImageURL:      r.ImageURL,
+		Balance:       r.Balance,
+		Agency:        r.Agency,
+		AccountNumber: r.AccountNumber,
+		AccountType:   r.AccountType,
+	}
 }
 
 type AccountPurchaseRequest struct {
@@ -52,6 +66,9 @@ type AccountResponse struct {
 	Color             string                    `json:"color,omitempty"`
 	ImageURL          string                    `json:"imageUrl,omitempty"`
 	Balance           shared.Money              `json:"balance"`
+	Agency            string                    `json:"agency,omitempty"`
+	AccountNumber     string                    `json:"accountNumber,omitempty"`
+	AccountType       string                    `json:"accountType,omitempty"`
 	MonthlyDebitTotal shared.Money              `json:"monthlyDebitTotal"`
 	Purchases         []AccountPurchaseResponse `json:"purchases"`
 }
@@ -67,6 +84,9 @@ func NewAccountResponse(o appaccount.AccountOverview) AccountResponse {
 		Color:             o.Account.Color,
 		ImageURL:          o.Account.ImageURL,
 		Balance:           o.Account.Balance,
+		Agency:            o.Account.Agency,
+		AccountNumber:     o.Account.AccountNumber,
+		AccountType:       o.Account.AccountType,
 		MonthlyDebitTotal: o.MonthlyDebitTotal,
 		Purchases:         purchases,
 	}
@@ -79,6 +99,9 @@ func NewCreatedAccountResponse(a *domainaccount.Account) AccountResponse {
 		Color:             a.Color,
 		ImageURL:          a.ImageURL,
 		Balance:           a.Balance,
+		Agency:            a.Agency,
+		AccountNumber:     a.AccountNumber,
+		AccountType:       a.AccountType,
 		MonthlyDebitTotal: shared.Zero,
 		Purchases:         []AccountPurchaseResponse{},
 	}
